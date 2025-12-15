@@ -124,11 +124,7 @@
             </div>
             <div class="flex items-center space-x-3">
                 <button id="settings-button" class="text-gray-400 hover:text-white transition duration-150" aria-label="Open Settings">
-                    <!-- Updated Settings Icon: Now using a modern SVG gear icon -->
-                    <!-- NOTE: The original request to use image_fb5a47.png as a settings icon 
-                         is replaced here by a standard SVG for better visual consistency and 
-                         because external files (like images) cannot be directly referenced 
-                         in this single-file HTML environment unless they are Base64 encoded. -->
+                    <!-- Settings Icon: modern SVG gear icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                       <path fill-rule="evenodd" d="M11.071 19.902a.75.75 0 0 1-.858.858L4.902 18.929a8.515 8.515 0 0 1 1.704-5.352 1.5 1.5 0 0 0-.714-2.146l-.854-.427a1.5 1.5 0 0 1 0-2.67l.854-.427c.563-.281.85-.92.714-1.554a8.515 8.515 0 0 1-1.704-5.352l5.352 1.704a.75.75 0 0 1 .858-.858l1.704-5.352a.75.75 0 0 1 1.42 0l1.704 5.352a.75.75 0 0 1 .858.858l5.352-1.704a8.515 8.515 0 0 1-1.704 5.352 1.5 1.5 0 0 0 .714 2.146l.854.427a1.5 1.5 0 0 1 0 2.67l-.854.427a1.5 1.5 0 0 0-.714 2.146l1.704 5.352a8.515 8.515 0 0 1-5.352-1.704.75.75 0 0 1-.858.858l-1.704 5.352a.75.75 0 0 1-1.42 0l-1.704-5.352ZM12 18.25a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Z" clip-rule="evenodd" />
                     </svg>
@@ -227,13 +223,40 @@
     </div>
 
     <script type="module">
-        // Global variables provided by the environment (needed for boilerplate consistency)
+        // Global environment ID
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Supabase Configuration (REPLACED FIREBASE) ---
+        // You MUST replace these placeholders with your actual Supabase project credentials.
+        const SUPABASE_URL = 'https://hmwsgydznafkbwxnjxek.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_UJPoQ2iR0I85NlxsRexRPg_4RlJImbS';
+        
+        // Load Supabase Client (using v2 for stability)
+        const supabaseScript = document.createElement('script');
+        supabaseScript.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+        document.head.appendChild(supabaseScript);
+
+        let supabase;
+        supabaseScript.onload = () => {
+             // Supabase client creation
+             if (window.supabase) {
+                 // CRITICAL FIX: Only attempt to initialize if the user has replaced the placeholders.
+                 if (SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+                    console.warn("Supabase skipped: Please replace 'YOUR_SUPABASE_PROJECT_URL' and 'YOUR_SUPABASE_ANON_KEY' with your actual credentials to enable database features.");
+                    return; // Skip initialization to avoid invalid URL error
+                 }
+
+                 try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log("Supabase client initialized.");
+                 } catch (e) {
+                    console.error("Supabase initialization failed. Check your URL and Key.", e);
+                 }
+             }
+        };
 
         // --- Core AI Configuration ---
-        const API_KEY = "AIzaSyAAyk3AHs1X7CPU9eMJ5mIfLJ7EzXZpQzY"; // Canvas environment provides the key if left empty
+        const API_KEY = ""; // Canvas environment provides the key if left empty
         const API_MODEL = "gemini-2.5-flash-preview-09-2025";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
         
@@ -324,324 +347,4 @@
             currentThemeSpan.textContent = isDarkMode ? 'Dark Mode' : 'Light Mode';
 
             // Define common styles for selection 
-            const SELECTED_CLASSES = ['bg-blue-100', 'border-blue-600', 'text-blue-800', 'dark:bg-blue-900/50', 'dark:border-blue-500', 'dark:text-blue-300'];
-            const UNSELECTED_CLASSES = ['bg-gray-50', 'border-gray-300', 'text-gray-700', 'dark:bg-gray-800', 'dark:border-gray-600', 'dark:text-gray-300'];
-
-            // Clean Slate
-            [themeLightButton, themeDarkButton].forEach(btn => {
-                btn.classList.remove(...SELECTED_CLASSES, ...UNSELECTED_CLASSES);
-            });
-
-            // Apply selected style
-            if (!isDarkMode) {
-                themeLightButton.classList.add(...SELECTED_CLASSES); 
-                themeDarkButton.classList.add(...UNSELECTED_CLASSES);
-            } else {
-                themeDarkButton.classList.add(...SELECTED_CLASSES);
-                themeLightButton.classList.add(...UNSELECTED_CLASSES);
-            }
-        }
-        
-        /**
-         * Toggles the theme and saves the preference.
-         * @param {boolean} dark - True for Dark Mode, False for Light Mode.
-         */
-        function toggleTheme(dark) {
-            isDarkMode = dark;
-            applyTheme();
-            updateThemeUI();
-            
-            // Emojis ALLOWED in chat response
-            const newThemeMessage = isDarkMode 
-                ? "🌙 Interface theme set to Dark Mode. Optimal for low-light environments."
-                : "☀️ Interface theme set to Light Mode. High-contrast display applied.";
-            addMessage(newThemeMessage, 'model');
-        }
-
-        // --- Persona Functions ---
-
-        /**
-         * Updates the UI in the settings modal to reflect the current persona.
-         */
-        function updatePersonaUI() {
-            currentVibeSpan.textContent = activePersona.charAt(0).toUpperCase() + activePersona.slice(1);
-
-            const SELECTED_CLASSES = ['bg-blue-100', 'border-blue-600', 'text-blue-800', 'dark:bg-blue-900/50', 'dark:border-blue-500', 'dark:text-blue-300'];
-            const UNSELECTED_CLASSES = ['bg-gray-50', 'border-gray-300', 'text-gray-700', 'dark:bg-gray-800', 'dark:border-gray-600', 'dark:text-gray-300'];
-
-            // Clean Slate
-            [vibeProButton, vibeCasualButton, vibeFlirtyButton].forEach(btn => {
-                 btn.classList.remove(...SELECTED_CLASSES, ...UNSELECTED_CLASSES);
-            });
-
-            // Apply selected style
-            const buttons = {
-                'professional': vibeProButton,
-                'casual': vibeCasualButton,
-                'flirty': vibeFlirtyButton
-            };
-
-            for (const persona in buttons) {
-                if (activePersona === persona) {
-                    buttons[persona].classList.add(...SELECTED_CLASSES);
-                } else {
-                    buttons[persona].classList.add(...UNSELECTED_CLASSES);
-                }
-            }
-        }
-        
-        /**
-         * Toggles the assistant persona and saves the preference.
-         * @param {string} newPersona - 'professional', 'casual', or 'flirty'.
-         */
-        function togglePersona(newPersona) {
-            activePersona = newPersona;
-            localStorage.setItem('activePersona', activePersona);
-            updatePersonaUI();
-            
-            let newVibeMessage = '';
-            if (activePersona === 'flirty') {
-                newVibeMessage = "💖 Swapping over to Flirty mode! Ready to give you all my attention. What's on your mind, gorgeous? 😉";
-            } else if (activePersona === 'casual') {
-                newVibeMessage = "🤙 Vibe Check: Switched to Casual. Ready to serve the tea, no cap."; 
-            } else {
-                newVibeMessage = "👔 Persona updated to Professional. Commencing formal operational procedures.";
-            }
-
-            addMessage(newVibeMessage, 'model');
-        }
-
-        // --- History Function ---
-
-        /**
-         * Clears all messages from the history array and the chat UI (except for the initial welcome).
-         */
-        function clearChatHistory() {
-            // 1. Clear history array
-            chatHistory = [];
-            
-            // 2. Clear UI, keeping only the first child (the welcome message container)
-            const chatChildren = Array.from(chatWindow.children);
-            if (chatChildren.length > 0) {
-                // Remove all children except the first one (the welcome message)
-                for (let i = 1; i < chatChildren.length; i++) {
-                    chatWindow.removeChild(chatChildren[i]);
-                }
-            }
-            
-            // Close the settings modal
-            settingsModal.classList.add('hidden');
-            
-            // Emojis ALLOWED in chat response
-            let confirmationMessage = "Session history has been cleared. How may I be of assistance?";
-            if (activePersona === 'casual') {
-                confirmationMessage = "Bet! History is scrubbed. What's the new main quest?";
-            } else if (activePersona === 'flirty') {
-                confirmationMessage = "History is wiped clean! A fresh start just for us. What's our next adventure together? ✨";
-            }
-
-            addMessage(confirmationMessage, 'model');
-        }
-
-        /**
-         * Updates both Persona and Theme UI elements in the settings modal.
-         */
-        function updateSettingsUI() {
-            updatePersonaUI();
-            updateThemeUI();
-        }
-
-        /**
-         * Adds a message bubble to the chat window.
-         * @param {string} text The message content.
-         * @param {string} role 'user' or 'model'.
-         * @param {Array<Object>} [sources=[]] Optional array of citation sources.
-         */
-        function addMessage(text, role, sources = []) {
-            const messageContainer = document.createElement('div');
-            messageContainer.classList.add('flex', role === 'user' ? 'justify-end' : 'justify-start');
-
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add(
-                'message-bubble',
-                role === 'user' ? 'user-message' : 'ai-message'
-            );
-            
-            // Insert the text content
-            messageBubble.innerHTML = text; 
-
-            // Add sources if available and it's an AI message
-            if (role === 'model' && sources.length > 0) {
-                const sourcesDiv = document.createElement('div');
-                sourcesDiv.classList.add('sources-container');
-                sourcesDiv.innerHTML = 'Sources: ';
-                
-                sources.slice(0, 3).forEach((source, index) => { // Limit to 3 sources for brevity
-                    const link = document.createElement('a');
-                    link.href = source.uri;
-                    link.target = '_blank';
-                    link.textContent = `${index + 1}. ${source.title || new URL(source.uri).hostname}`;
-                    
-                    const sourceItem = document.createElement('span');
-                    sourceItem.classList.add('mr-2');
-                    sourceItem.appendChild(link);
-                    sourcesDiv.appendChild(sourceItem);
-                });
-                messageBubble.appendChild(sourcesDiv);
-            }
-
-            messageContainer.appendChild(messageBubble);
-            chatWindow.appendChild(messageContainer);
-            
-            // Scroll to the latest message
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        /**
-         * Fetches response from the Gemini API with exponential backoff.
-         * @param {Array<Object>} history The conversation history to send.
-         * @param {number} retries Current retry count.
-         * @returns {Promise<Object>} The parsed JSON response.
-         */
-        async function fetchGeminiResponse(history, retries = 0) {
-            const maxRetries = 5;
-            const delay = Math.pow(2, retries) * 1000 + (Math.random() * 1000); // Exponential backoff + jitter
-
-            try {
-                const payload = {
-                    contents: history,
-                    // MANDATORY: Enable Google Search Grounding
-                    tools: [{ "google_search": {} }],
-                    systemInstruction: {
-                        parts: [{ text: getSystemPrompt() }] // Using dynamic persona prompt
-                    },
-                };
-
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.status === 429 && retries < maxRetries) {
-                    // Too Many Requests, retry
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchGeminiResponse(history, retries + 1);
-                }
-
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    throw new Error(`API Error: ${response.status} - ${errorBody}`);
-                }
-
-                return await response.json();
-
-            } catch (error) {
-                if (retries < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchGeminiResponse(history, retries + 1);
-                }
-                console.error("Failed to fetch response after multiple retries:", error);
-                throw new Error("API Connection Failure: Unable to establish contact with the AI service. Please check system logs for details.");
-            }
-        }
-
-        /**
-         * Handles sending the message and processing the AI response.
-         */
-        async function sendMessage(event) {
-            event.preventDefault();
-            const prompt = userInput.value.trim();
-            if (!prompt) return;
-
-            // 1. Disable UI and show loading
-            userInput.value = '';
-            sendButton.disabled = true;
-            loadingIndicator.classList.remove('hidden');
-
-            // 2. Add user message to UI and history
-            addMessage(prompt, 'user');
-            chatHistory.push({ role: 'user', parts: [{ text: prompt }] });
-            
-            // Use a temporary variable for the history sent to the API to handle short-term context
-            const historyForApi = [...chatHistory]; 
-
-            try {
-                // 3. Call Gemini API
-                const result = await fetchGeminiResponse(historyForApi);
-                const candidate = result.candidates?.[0];
-
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    const text = candidate.content.parts[0].text;
-                    let sources = [];
-                    
-                    // Extract Grounding Sources (Citations)
-                    const groundingMetadata = candidate.groundingMetadata;
-                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                        sources = groundingMetadata.groundingAttributions
-                            .map(attribution => ({
-                                uri: attribution.web?.uri,
-                                title: attribution.web?.title,
-                            }))
-                            .filter(source => source.uri); // Ensure sources are valid
-                    }
-
-                    // 4. Add AI message to UI and history
-                    addMessage(text, 'model', sources);
-                    chatHistory.push({ role: 'model', parts: [{ text: text }] });
-
-                } else {
-                    addMessage("Error: The AI response structure was incomplete or malformed. Please try rephrasing your request.", 'model');
-                    console.error("Gemini response was malformed or empty:", result);
-                }
-
-            } catch (error) {
-                console.error("Operational Error during API call:", error);
-                // 5. Display error message
-                addMessage(`Critical Error: ${error.message.split(' - ')[0]}`, 'model');
-                // Remove the last user message from history so retrying doesn't duplicate the query
-                chatHistory.pop(); 
-            } finally {
-                // 6. Re-enable UI
-                sendButton.disabled = false;
-                loadingIndicator.classList.add('hidden');
-                userInput.focus();
-            }
-        }
-
-        // --- Settings Event Handlers ---
-        settingsButton.addEventListener('click', () => {
-            updateSettingsUI(); // Refresh UI before opening
-            settingsModal.classList.remove('hidden');
-        });
-
-        vibeProButton.addEventListener('click', () => togglePersona('professional'));
-        vibeCasualButton.addEventListener('click', () => togglePersona('casual'));
-        vibeFlirtyButton.addEventListener('click', () => togglePersona('flirty'));
-
-        themeLightButton.addEventListener('click', () => toggleTheme(false));
-        themeDarkButton.addEventListener('click', () => toggleTheme(true));
-        
-        clearHistoryButton.addEventListener('click', clearChatHistory);
-
-        // Click outside modal to close
-        function closeSettings(event) {
-            if (event.target === settingsModal) {
-                settingsModal.classList.add('hidden');
-            }
-        }
-        window.closeSettings = closeSettings; // Expose to global scope for HTML onclick
-
-        // --- Initializers ---
-        inputForm.addEventListener('submit', sendMessage);
-        
-        // Apply theme, update UI elements, and set the initial welcome message on load
-        applyTheme(); 
-        updateSettingsUI(); 
-        welcomeMessageElement.innerHTML = getWelcomeMessage();
-
-        console.log(`App ID: ${appId}`);
-
-    </script>
-</body>
-</html>
+            const SELECTED_CLASSES = ['bg-blue-100', 'border-blue-600', 'text-blue-800', 'dark:bg-blue-900/5
