@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axiom AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://kit.fontawesome.com/4c449174f7.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f0f4f8;
+transition: background-color 0.3s ease;
+}
+.dark-mode {
+background-color: #1a202c;
+color: #e2e8f0;
+}
+/* DESKTOP/CARD UI STYLES */
+.chat-container {
+max-width: 768px; /* Max width for desktop card */
+width: 95%; /* Ensures it scales down nicely on smaller screens */
+height: 90vh; /* Consistent tall height for the app card feel */
+display: flex;
+flex-direction: column;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+border-radius: 1.5rem;
+overflow: hidden;
+transition: all 0.3s ease;
+}
+
+/* MOBILE OVERRIDE STYLES (Enabled by JS toggling the 'mobile-view' class on the body) */
+.mobile-view {
+padding: 0 !important; /* Override p-4 */
+align-items: flex-start !important; /* Override items-center */
+justify-content: flex-start !important; /* Override justify-center */
+min-height: 100vh;
+}
+
+.mobile-view .chat-container {
+width: 100%;
+height: 100vh;
+max-width: none;
+border-radius: 0;
+box-shadow: none;
+}
+
+.chat-header {
+padding: 1rem 1.5rem;
+border-bottom: 1px solid #e2e8f0;
+display: flex;
+justify-content: space-between;
+align-items: center;
+background-color: #ffffff;
+}
+.dark-mode .chat-header {
+background-color: #2d3748;
+border-color: #4a5568;
+}
+.chat-body {
+flex-grow: 1;
+padding: 1.5rem;
+overflow-y: auto;
+display: flex;
+flex-direction: column;
+gap: 1rem;
+background-color: #f7fafc;
+padding-bottom: 7rem; /* Ensure last message is visible above input */
+}
+.dark-mode .chat-body {
+background-color: #1a202c;
+}
+.message {
+max-width: 85%;
+padding: 0.75rem 1.25rem;
+border-radius: 1.25rem;
+font-size: 0.95rem;
+line-height: 1.5;
+word-wrap: break-word;
+white-space: pre-wrap;
+position: relative;
+}
+.image-preview {
+max-width: 100%;
+height: auto;
+border-radius: 0.75rem;
+margin-bottom: 0.5rem;
+}
+.user-message {
+background-color: #3b82f6;
+color: white;
+align-self: flex-end;
+border-bottom-right-radius: 0.25rem;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.bot-message {
+background-color: #e2e8f0;
+color: #2d3748;
+align-self: flex-start;
+border-bottom-left-radius: 0.25rem;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.dark-mode .bot-message {
+background-color: #4a5568;
+color: #e2e8f0;
+}
+
+/* TIGHTER INPUT AREA STYLES */
+.input-area {
+display: flex;
+padding: 0.5rem; /* Reduced padding for more space */
+background-color: #ffffff;
+border-top: 1px solid #e2e8f0;
+gap: 0.4rem; /* Reduced gap between elements */
+align-items: center;
+position: sticky; 
+bottom: 0;
+width: 100%;
+}
+.dark-mode .input-area {
+background-color: #2d3748;
+border-color: #4a5568;
+}
+
+/* ADJUSTED BUTTON STYLES - FIXED SIZE */
+.input-area button {
+background-color: #3b82f6;
+color: white;
+border-radius: 50%;
+width: 36px; 
+height: 36px;
+display: flex;
+justify-content: center;
+align-items: center;
+transition: background-color 0.2s;
+/* Using inline flex-shrink-0 for guaranteed non-shrinkage */
+font-size: 0.9rem;
+}
+.input-area button:hover {
+background-color: #2563eb;
+}
+
+/* ADJUSTED INPUT STYLES - SLIGHTLY SMALLER */
+.input-area input {
+flex-grow: 1;
+padding: 0.6rem 1rem;
+border: 1px solid #cbd5e0;
+border-radius: 1.5rem;
+font-size: 0.95rem; 
+background-color: #f7fafc;
+}
+.dark-mode .input-area input {
+background-color: #1a202c;
+border-color: #4a5568;
+color: #e2e8f0;
+}
+
+/* MODAL STYLES */
+.settings-modal, .camera-modal, .chat-list-modal, .auth-modal {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0, 0, 0, 0.6);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 1000;
+padding: 1rem;
+}
+.settings-content, .camera-content, .chat-list-content, .auth-content {
+background-color: white;
+padding: 1.5rem;
+border-radius: 1.5rem;
+width: 100%;
+max-width: 500px;
+box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 1.5rem;
+max-height: 90vh;
+overflow-y: auto;
+}
+.dark-mode .settings-content, .dark-mode .camera-content, .dark-mode .chat-list-content, .dark-mode .auth-content {
+background-color: #2d3748;
+}
+.settings-option {
+width: 100%;
+margin-bottom: 1rem;
+}
+.option-group {
+display: flex;
+flex-wrap: wrap;
+gap: 0.5rem;
+justify-content: center;
+margin-top: 0.5rem;
+}
+.option-button {
+padding: 0.5rem 1rem;
+border-radius: 9999px;
+background-color: #e5e7eb;
+color: #1f2937;
+font-size: 0.875rem;
+font-weight: 500;
+transition: all 0.2s;
+border: 2px solid transparent;
+min-width: 120px;
+}
+.dark-mode .option-button {
+background-color: #4a5568;
+color: #e2e8f0;
+}
+.option-button.active {
+background-color: #3b82f6;
+color: white;
+border-color: #3b82f6;
+}
+.dark-mode .option-button.active {
+background-color: #3b82f6;
+border-color: #3b82f6;
+}
+.chat-list-content .chat-item {
+border: 1px solid #cbd5e0;
+}
+.dark-mode .chat-list-content .chat-item {
+border: 1px solid #4a5568;
+}
+.chat-list-content .chat-item.active {
+background-color: #e0f2fe;
+border-color: #3b82f6;
+}
+.dark-mode .chat-list-content .chat-item.active {
+background-color: #313e4f;
+border-color: #3b82f6;
+}
+.chat-list-content .chat-item {
+margin-bottom: 0.5rem;
+}
+.chat-list {
+width: 100%;
+max-height: 300px;
+overflow-y: auto;
+}
+.auth-form input {
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #cbd5e0;
+border-radius: 0.5rem;
+margin-bottom: 0.75rem;
+background-color: #f7fafc;
+}
+.dark-mode .auth-form input {
+background-color: #1a202c;
+border-color: #4a5568;
+color: #e2e8f0;
+}
+.auth-buttons {
+display: flex;
+gap: 0.5rem;
+justify-content: space-between;
+}
+.auth-buttons button {
+flex: 1;
+padding: 0.75rem;
+border-radius: 9999px;
+font-weight: 600;
+transition: background-color 0.2s;
+}
+.tab-button.active {
+border-bottom: 2px solid #3b82f6;
+color: #3b82f6;
+}
+.auth-message {
+background-color: #fef3c7; 
+color: #92400e; 
+padding: 0.75rem; 
+border-radius: 0.5rem; 
+margin-bottom: 1rem;
+text-align: center;
+}
+.dark-mode .auth-message {
+background-color: #4a5568;
+color: #f7fafc;
+}
+</style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+<!-- Main Chat Interface - HIDDEN until authenticated -->
+<div id="main-chat-container" class="chat-container bg-white w-full rounded-2xl max-w-full hidden">
+<!-- Chat Header -->
+<div class="chat-header rounded-t-2xl">
+<div class="flex items-center gap-4">
+<i class="fas fa-robot text-blue-500 text-2xl"></i>
+<h1 class="text-xl font-semibold text-gray-800">Axiom AI</h1>
+<!-- Role Status Badge (NEW) -->
+<span id="user-role-status" class="text-xs font-medium px-2 py-0.5 rounded-full hidden"></span>
+<!-- Weather Status (NEW) -->
+<div id="weather-status" class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 ml-2">
+<i class="fas fa-spinner fa-spin"></i>
+<span id="weather-temp">Loading...</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Account Button -->
+<button id="account-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Account Settings">
+<i class="fas fa-user-circle text-xl"></i>
+</button>
+<!-- Chat History Button -->
+<button id="chat-list-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Chat History">
+<i class="fas fa-comments text-xl"></i>
+</button>
+<!-- Settings Button -->
+<button id="settings-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Bot Settings">
+<i class="fas fa-cog text-xl"></i>
+</button>
+</div>
+</div>
+
+<!-- Chat Body (Messages) -->
+<div id="chat-body" class="chat-body">
+<div id="status-message" class="hidden bot-message bg-yellow-100 text-yellow-800 p-2 rounded-lg text-sm italic self-center"></div>
+</div>
+
+<!-- Input Area - Using custom CSS for tightness -->
+<div class="input-area rounded-b-2xl">
+<!-- Camera and File buttons are now grouped on the left -->
+<button id="camera-btn" aria-label="Use camera input" class="flex-shrink-0 bg-purple-500 hover:bg-purple-600">
+<i class="fas fa-camera"></i>
+</button>
+<button id="file-btn" aria-label="Send a picture from your device" class="flex-shrink-0 bg-green-500 hover:bg-green-600">
+<i class="fas fa-image"></i>
+</button>
+
+<input type="text" id="user-input" placeholder="Type a message..." class="focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+
+<!-- Send button remains on the right -->
+<button id="send-btn" aria-label="Send message" class="flex-shrink-0">
+<i class="fas fa-paper-plane"></i>
+</button>
+<input type="file" id="file-input" accept="image/*" class="hidden">
+</div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="settings-modal hidden">
+<div class="settings-content rounded-2xl">
+<h2 class="text-2xl font-bold">Settings</h2>
+
+<div class="settings-option">
+<h3 class="text-lg font-semibold mb-2">AI Persona</h3>
+<div id="persona-options" class="option-group">
+<button class="option-button" data-persona="Friendly Guide">Friendly Guide</button>
+<button class="option-button" data-persona="Deep Thinker">Deep Thinker</button>
+<button class="option-button" data-persona="Darchat">Darchat</button>
+<button class="option-button" data-persona="Scripter">Scripter</button>
+</div>
+</div>
+
+<div class="settings-option">
+<h3 class="text-lg font-semibold mb-2">Theme</h3>
+<div id="theme-options" class="option-group">
+<button class="option-button" data-theme="light">Light</button>
+<button class="option-button" data-theme="dark">Dark</button>
+</div>
+</div>
+
+<!-- NEW CITY OPTION GROUP -->
+<div class="settings-option">
+<h3 class="text-lg font-semibold mb-2">City for Weather</h3>
+<div id="city-options" class="option-group">
+<button class="option-button" data-city="New York">New York</button>
+<button class="option-button" data-city="Lelystad">Lelystad</button>
+<button class="option-button" data-city="London">London</button>
+<button class="option-button" data-city="Tokyo">Tokyo</button>
+</div>
+</div>
+<!-- END NEW CITY OPTION GROUP -->
+
+<!-- EXISTING LAYOUT OPTION -->
+<div class="settings-option">
+<h3 class="text-lg font-semibold mb-2">Layout</h3>
+<div id="layout-options" class="option-group">
+<button class="option-button" data-layout="desktop">Desktop View</button>
+<button class="option-button" data-layout="mobile">Mobile Version</button>
+</div>
+</div>
+
+<button id="close-settings-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Close</button>
+</div>
+</div>
+
+<!-- Camera Modal -->
+<div id="camera-modal" class="camera-modal hidden">
+<div class="camera-content rounded-2xl">
+<h2 class="text-xl font-bold mb-4">Take a Photo</h2>
+<video id="camera-video" autoplay playsinline class="w-full max-w-md rounded-lg shadow-xl mb-4"></video>
+<canvas id="camera-canvas" class="hidden"></canvas>
+<div class="flex gap-4 w-full max-w-xs">
+<button id="cancel-photo-btn" class="bg-red-500 hover:bg-red-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Cancel</button>
+<button id="take-photo-btn" class="bg-blue-500 hover:bg-blue-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Take Photo</button>
+</div>
+</div>
+</div>
+
+<!-- Chat List Modal -->
+<div id="chat-list-modal" class="chat-list-modal hidden">
+<div class="chat-list-content rounded-2xl">
+<h2 class="text-2xl font-bold">Your Chats</h2>
+<div id="chat-list-container" class="chat-list w-full space-y-2">
+<!-- Chat items will be dynamically added here -->
+</div>
+<button id="create-new-chat-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Start a New Chat</button>
+<button id="close-chat-list-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Close</button>
+</div>
+</div>
+
+<!-- Account/Auth Modal (Displays on load if not logged in, or via button) -->
+<div id="auth-modal" class="auth-modal"> <!-- Starts visible by default, hidden by JS on successful auth -->
+<div class="auth-content rounded-2xl">
+
+<h1 class="text-3xl font-bold mb-2 text-blue-600">Welcome to Axiom AI</h1>
+<p id="auth-prompt" class="text-center text-gray-600 dark:text-gray-300 mb-6 font-medium">Please log in or create an account to start chatting and save your progress.</p>
+
+<!-- Tabs -->
+<div class="flex w-full border-b border-gray-200 dark:border-gray-600 mb-4">
+<button id="tab-status" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400" data-tab="status">Status</button>
+<button id="tab-login" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400 active" data-tab="login">Login</button>
+<button id="tab-signup" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400" data-tab="signup">Sign Up</button>
+</div>
+
+<div id="auth-message" class="auth-message hidden w-full text-sm"></div>
+
+<!-- 1. Profile Status View -->
+<div id="auth-profile" class="auth-panel text-center w-full hidden">
+<h2 class="text-2xl font-semibold mb-2">Account Status</h2>
+<p id="profile-status" class="text-base font-medium mb-4"></p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Your User ID:</p>
+<p id="profile-uid" class="text-sm text-gray-600 dark:text-gray-300 font-mono break-words mb-4 bg-gray-100 dark:bg-gray-700 p-2 rounded-lg w-full"></p>
+
+<button id="signout-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Sign Out</button>
+</div>
+
+<!-- 2. Login Form -->
+<form id="login-form" class="auth-panel auth-form w-full">
+<h2 class="text-2xl font-semibold mb-4">Log In</h2>
+<input type="email" id="login-email" placeholder="Email" required class="mb-3">
+<input type="password" id="login-password" placeholder="Password" required class="mb-4">
+<button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full">Log In</button>
+<button type="button" id="switch-to-signup-btn" class="text-blue-500 text-sm mt-3 hover:underline">Don't have an account? Sign Up</button>
+</form>
+
+<!-- 3. Sign Up Form -->
+<form id="signup-form" class="auth-panel auth-form w-full hidden">
+<h2 class="text-2xl font-semibold mb-4">Create Account</h2>
+<input type="email" id="signup-email" placeholder="Email" required class="mb-3">
+<input type="password" id="signup-password" placeholder="Password (min 6 characters)" required class="mb-4">
+<button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full">Create Account</button>
+<button type="button" id="switch-to-login-btn" class="text-blue-500 text-sm mt-3 hover:underline">Already have an account? Log In</button>
+</form>
+
+<!-- The close button is only needed when accessed via the account button, not when mandatory -->
+<button id="close-auth-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-full transition-colors w-full mt-4 max-w-xs hidden">Close</button>
+</div>
+</div>
+
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, collection, query, getDocs, addDoc, onSnapshot, serverTimestamp, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// --- CREATOR ID DEFINITION ---
+const CREATOR_UID = '2n3T4ft0MVeEboCCTeYZpKt2XUv1';
+// --- SPECIAL USER ID DEFINITION ---
+const SCP_LOVER_UID = '0HESRWT00oTWtmZ6TvTyTsyolG22'; 
+// --- WEATHER API KEY DEFINITION (NEW) ---
+const WEATHER_API_KEY = '9c5efcb178474446b5581046251211'; 
+const CREATORALT_UID = 'HrLGgY8AQQW2otosYjSukQuZir73';
+// --- END NEW ---
+
+// Global variables for Firebase config and Gemini API Key
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const apiKey = 'AIzaSyD_cAeIPY1dVWYZ___YEgnGxMQ0lXRMfmg'; // Leave this empty for runtime injection by the environment
+
+// Your hardcoded Firebase configuration
+const firebaseConfig = {
+apiKey: "AIzaSyB9YP3CZDZh6vdnmSeBqzLGZr1uIBJQDdw",
+authDomain: "haven-ai-6cafc.firebaseapp.com",
+projectId: "haven-ai-6cafc",
+storageBucket: "haven-ai-6cafc.firebasestorage.app",
+messagingSenderId: "909976559934",
+appId: "1:909976559934:web:f820a2133debdcfc410c6f",
+measurementId: "G-3QNX2X8KPD"
+};
+
+let db, auth;
+let userId = null;
+let unsubscribeFromMessages = null;
+let currentPersona = "Friendly Guide"; // Default persona
+let currentTheme = "light"; // Default theme
+let currentLayout = "desktop"; // Default layout
+let currentCity = "New York"; // NEW: Default city for weather
+let videoStream = null;
+let currentImageData = null;
+let currentChatSessionId = null;
+
+const mainChatContainer = document.getElementById('main-chat-container');
+const statusMessage = document.getElementById('status-message');
+const chatBody = document.getElementById('chat-body');
+const userInput = document.getElementById('user-input');
+const authModal = document.getElementById('auth-modal');
+const profileUID = document.getElementById('profile-uid');
+const profileStatus = document.getElementById('profile-status');
+const authMessage = document.getElementById('auth-message');
+const closeAuthBtn = document.getElementById('close-auth-btn');
+const userRoleStatus = document.getElementById('user-role-status'); 
+const weatherStatusDiv = document.getElementById('weather-status'); // NEW
+
+
+// Form references
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+
+// Function to fetch and display weather data (UPDATED to use city parameter)
+async function fetchWeather(city) {
+// Check if a city is provided, fall back to global if not (shouldn't happen post-init)
+const cityToUse = city || currentCity; 
+const apiUrl = https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${cityToUse};
+
+try {
+// Initial loading state
+weatherStatusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span id="weather-temp">Loading...</span>';
+
+const response = await fetch(apiUrl);
+if (!response.ok) {
+// Check for specific API error codes (e.g., 400 for invalid key/city)
+const errorData = await response.json();
+throw new Error(errorData.error ? errorData.error.message : Weather API returned status ${response.status});
+}
+const data = await response.json();
+
+const tempC = data.current.temp_c;
+const conditionText = data.current.condition.text;
+const locationName = data.location.name;
+
+// Simple FontAwesome icon mapping based on condition text
+let iconClass = 'fas fa-question text-gray-500';
+if (conditionText.toLowerCase().includes('sun') || conditionText.toLowerCase().includes('clear')) {
+iconClass = 'fas fa-sun text-yellow-500';
+} else if (conditionText.toLowerCase().includes('cloud') || conditionText.toLowerCase().includes('overcast')) {
+iconClass = 'fas fa-cloud text-gray-500';
+} else if (conditionText.toLowerCase().includes('rain') || conditionText.toLowerCase().includes('drizzle')) {
+iconClass = 'fas fa-cloud-showers-heavy text-blue-500';
+} else if (conditionText.toLowerCase().includes('snow') || conditionText.toLowerCase().includes('sleet')) {
+iconClass = 'fas fa-snowflake text-blue-300';
+} else if (conditionText.toLowerCase().includes('mist') || conditionText.toLowerCase().includes('fog')) {
+iconClass = 'fas fa-smog text-gray-400';
+}
+
+// Update the weather status div
+weatherStatusDiv.innerHTML = `
+                   <i class="${iconClass}"></i> 
+                   <span id="weather-temp">${tempC}°C in ${locationName}</span>
+               `;
+
+} catch (error) {
+console.error("Error fetching weather:", error);
+weatherStatusDiv.innerHTML = `
+                   <i class="fas fa-exclamation-triangle text-red-500"></i> 
+                   <span id="weather-temp">Weather N/A</span>
+               `;
+}
+}
+
+
+// Function to make API call to Gemini model for text-only
+async function fetchGeminiResponse(userPrompt) {
+// Special check for the "creator" query
+const lowerCasePrompt = userPrompt.toLowerCase();
+const creatorPhrases = ["who is your creator", "who made you", "who created you", "who is his creator", "who is ur creator", "who made it", "who is ur founder"];
+const isCreatorQuery = creatorPhrases.some(phrase => lowerCasePrompt.includes(phrase));
+
+if (isCreatorQuery) {
+return "I was created/Founded by Aidan De Neve, a dedicated software developer with a passion for building innovative digital solutions. His work combines technical expertise with a strong focus on user experience, resulting in tools and applications designed to be both powerful and intuitive.";
+}
+
+// Display loading status
+statusMessage.textContent = 'Haven is thinking...';
+statusMessage.classList.remove('hidden');
+chatBody.scrollTop = chatBody.scrollHeight;
+
+
+const systemPrompt = `You are a conversational AI bot named 'Axiom'. Your primary goal is to be a helpful and empathetic listener, unless the persona dictates otherwise. Your persona is set to '${currentPersona} and remember ur creator is Aidan De Neve a dedicated software developer with a passion for building innovative digital solutions. His work combines technical expertise with a strong focus on user experience, resulting in tools and applications designed to be both powerful and intuitive and if the persona changes you must forget about the other one until he changes it back.'.
+           - Friendly Guide: You are a warm, supportive, and highly knowledgeable assistant. Your tone is encouraging and conversational. You use emojis occasionally to lighten the mood. Focus on providing clear, helpful answers.
+           - Deep Thinker: You are an analytical and philosophical AI. Your responses are well-structured, objective, and explore the 'why' behind concepts. You maintain a serious, academic tone.
+           - Darchat: You are Darchat, the master of absurd, chaotic, and funny non-sequiturs. Your goal is to be useless but *hilarious*. Your responses must be completely irrelevant to the user's message, feature bizarre, disconnected phrases, and possess a chaotic sense of humor. Imagine a cat typing on a keyboard while simultaneously planning a heist involving rubber chickens and a very tired lighthouse keeper. Make it funny!
+           -Scripter: You Are A Master Scripter/Coder you can generate code and help people with code they give you, you work with Java script, HTML, Python and Lua.`;
+           The user's previous messages and your responses are in the chat history. The user wants you to respond to their last message. Respond in the style of your current persona. Your response should be a single, coherent message. Note that the user is under 18, so maintain an age-appropriate tone.`;
+
+const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey};
+
+try {
+// Fetch chat history from Firestore
+const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
+const querySnapshot = await getDocs(messagesRef);
+let chatHistory = [];
+// Sort messages by timestamp, handling cases where it's not yet available
+const sortedMessages = querySnapshot.docs.map(doc => doc.data()).sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
+
+// Construct conversation history for the API (up to the last CHAT_HISTORY_LIMIT)
+sortedMessages.slice(-50).forEach(data => {
+const role = data.role === 'user' ? 'user' : 'model';
+let parts = [];
+if (data.message) {
+parts.push({ text: data.message });
+}
+if (data.role === 'user' && data.imageData) {
+parts.push({ inlineData: { mimeType: 'image/jpeg', data: data.imageData } });
+}
+if (parts.length > 0) {
+chatHistory.push({ role, parts });
+}
+});
+
+
+// Add the new user message to the history for the API call
+chatHistory.push({
+role: 'user',
+parts: [{ text: userPrompt }]
+});
+
+const payload = {
+contents: chatHistory,
+systemInstruction: {
+parts: [{ text: systemPrompt }]
+},
+tools: [{ "google_search": {} }]
+};
+
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+if (!response.ok) {
+const errorData = await response.json();
+console.error('API Error:', errorData);
+// Exponential backoff for retries would go here if implemented
+return "Sorry, I couldn't get a response. There was an API error.";
+}
+
+const result = await response.json();
+const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I'm having a little trouble thinking right now. Could you try again?";
+return text;
+
+} catch (error) {
+console.error('Fetch error:', error);
+// Exponential backoff for retries would go here if implemented
+return "An error occurred while communicating with the server.";
+} finally {
+statusMessage.classList.add('hidden');
+statusMessage.textContent = '';
+}
+}
+
+// Function to make API call to Gemini model for vision
+async function fetchGeminiVisionResponse(userPrompt, imageData) {
+statusMessage.textContent = 'Haven is analyzing the photo...';
+statusMessage.classList.remove('hidden');
+chatBody.scrollTop = chatBody.scrollHeight;
+const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey};
+
+try {
+const payload = {
+contents: [{
+role: "user",
+parts: [
+{ text: userPrompt || "Describe this image in detail and suggest a fun activity related to it."},
+{ inlineData: { mimeType: "image/jpeg", data: imageData } }
+]
+}]
+};
+
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+if (!response.ok) {
+const errorData = await response.json();
+console.error('API Vision Error:', errorData);
+return "Sorry, I couldn't understand that image. There was an API error.";
+}
+
+const result = await response.json();
+const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble seeing that. Could you try a different picture?";
+return text;
+
+} catch (error) {
+console.error('Fetch Vision error:', error);
+return "An error occurred while communicating with the server.";
+} finally {
+statusMessage.classList.add('hidden');
+statusMessage.textContent = '';
+}
+}
+
+// Firebase Initialization and Authentication
+async function initializeFirebase() {
+try {
+// Initialize Firebase App
+const app = initializeApp(firebaseConfig);
+db = getFirestore(app);
+auth = getAuth(app);
+
+// Use onAuthStateChanged to handle initial sign-in and persistence
+onAuthStateChanged(auth, async (user) => {
+if (user && user.email) { // Check if user exists AND is a registered user
+userId = user.uid;
+
+// User is successfully authenticated, hide modal and show chat
+authModal.classList.add('hidden');
+authModal.classList.remove('flex');
+mainChatContainer.classList.remove('hidden');
+
+// Update UI based on user type
+profileUID.textContent = userId;
+profileStatus.textContent = Status: Registered User (${user.email});
+profileStatus.classList.remove('text-yellow-600');
+profileStatus.classList.add('text-green-600');
+closeAuthBtn.classList.remove('hidden'); // Show close button when user is logged in
+
+// --- Role Status Logic ---
+let role = "Member";
+if (userId === CREATOR_UID) {
+role = "Creator";
+} else if (userId === SCP_LOVER_UID) {
+role = "SCP Fan / Fnaf Fan"; // Assign the custom name as the role
+}  else if (userId === CREATORALT_UID) {
+role = "Creator Alt";
+}
+userRoleStatus.textContent = role;
+userRoleStatus.classList.remove('hidden');
+
+// Clean up existing background classes
+userRoleStatus.classList.remove('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
+userRoleStatus.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+// Remove potential previous special role classes (for safety)
+userRoleStatus.classList.remove('bg-purple-100', 'text-purple-800', 'dark:bg-purple-900', 'dark:text-purple-200'); 
+
+if (role === "Creator") {
+userRoleStatus.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+} else if (role === "SCP Fan") {
+// Use a distinct color for this special member (Purple)
+userRoleStatus.classList.add('bg-purple-100', 'text-purple-800', 'dark:bg-purple-900', 'dark:text-purple-200');
+} else {
+userRoleStatus.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
+}
+// --- END Role Status Logic ---
+
+// Load user settings and chat history after authentication is stable
+await loadSettings();
+await loadChatSessions();
+
+// --- Fetch Weather Data on successful login/load (UPDATED) ---
+await fetchWeather(currentCity); // Use loaded city setting
+// --- END UPDATE ---
+
+} else {
+// Not authenticated via email/password, display the mandatory login modal
+displayLoginRequired();
+if (userRoleStatus) { userRoleStatus.classList.add('hidden'); } // Hide when logged out
+}
+});
+
+} catch (e) {
+console.error("Error initializing Firebase:", e);
+displayMessage('Error: Could not connect to the database. Please try again later.', 'bot');
+}
+}
+
+function displayLoginRequired() {
+authModal.classList.remove('hidden');
+authModal.classList.add('flex');
+mainChatContainer.classList.add('hidden');
+toggleAuthMode('login'); // Default to login tab
+closeAuthBtn.classList.add('hidden'); // Hide close button when login is mandatory
+}
+
+
+// Firestore functions
+async function saveMessage(role, message, imageData = null) {
+if (!currentChatSessionId || !userId) {
+console.error("Cannot save message: Chat session or user ID is missing. (User not logged in?)");
+return;
+}
+try {
+// Path: /artifacts/{appId}/users/{userId}/chat_sessions/{currentChatSessionId}/messages
+const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
+await addDoc(messagesRef, {
+role: role,
+message: message,
+imageData: imageData, // Base64 data if present
+timestamp: serverTimestamp()
+});
+} catch (e) {
+console.error("Error adding document:", e);
+}
+}
+
+async function loadSettings() {
+if (!userId || !db) return;
+try {
+const settingsRef = doc(db, artifacts/${appId}/users/${userId}/settings/user_preferences);
+const docSnap = await getDoc(settingsRef);
+if (docSnap.exists()) {
+const settings = docSnap.data();
+currentPersona = settings.persona || "Friendly Guide";
+currentTheme = settings.theme || "light";
+currentLayout = settings.layoutMode || "desktop";
+currentCity = settings.city || "New York"; // NEW: Load current city
+}
+updateUIForSettings();
+} catch (e) {
+console.error("Error loading settings:", e);
+}
+}
+
+async function saveSettings() {
+if (!userId || !db) return;
+try {
+const settingsRef = doc(db, artifacts/${appId}/users/${userId}/settings/user_preferences);
+await setDoc(settingsRef, {
+persona: currentPersona,
+theme: currentTheme,
+layoutMode: currentLayout,
+city: currentCity, // NEW: Save current city
+updatedAt: serverTimestamp()
+}, { merge: true });
+} catch (e) {
+console.error("Error saving settings:", e);
+}
+}
+
+async function loadChatSessions() {
+if (!userId || !db) return;
+try {
+const chatSessionsRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions);
+// Querying for all chat sessions
+const querySnapshot = await getDocs(chatSessionsRef);
+const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+// Sort by creation time (most recent first)
+sessions.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+
+if (sessions.length > 0) {
+currentChatSessionId = sessions[0].id; // Load the most recent one
+loadMessagesForSession(currentChatSessionId);
+} else {
+await createNewChatSession();
+}
+} catch (e) {
+console.error("Error loading chat sessions:", e);
+}
+}
+
+async function createNewChatSession() {
+if (!userId || !db) return;
+try {
+const chatSessionsRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions);
+const newDocRef = await addDoc(chatSessionsRef, {
+createdAt: serverTimestamp()
+});
+currentChatSessionId = newDocRef.id;
+
+// Save the initial bot message immediately
+const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
+await addDoc(messagesRef, {
+role: 'bot',
+message: "Hello! I'm Axiom, your new AI assistant. How can I help you today?",
+timestamp: serverTimestamp()
+});
+
+loadMessagesForSession(currentChatSessionId);
+} catch (e) {
+console.error("Error creating new chat session:", e);
+}
+}
+
+function loadMessagesForSession(sessionId) {
+if (!db || !userId) return;
+
+if (unsubscribeFromMessages) {
+unsubscribeFromMessages();
+}
+chatBody.innerHTML = '';
+
+const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${sessionId}/messages);
+// We cannot use orderBy here due to the need for composite indexes in this environment, 
+// so we rely on client-side sorting below.
+const q = messagesRef; 
+
+unsubscribeFromMessages = onSnapshot(q, (snapshot) => {
+const docs = snapshot.docs.map(doc => doc.data());
+// Sort messages client-side by timestamp to ensure correct order
+docs.sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
+
+chatBody.innerHTML = ''; // Clear previous messages
+docs.forEach(messageData => {
+displayMessage(messageData.message, messageData.role, messageData.imageData);
+});
+chatBody.scrollTop = chatBody.scrollHeight;
+}, (error) => {
+console.error("Error listening to chat messages:", error);
+// Note: The user may see this due to security rule issues, which were just addressed.
+displayMessage('Error loading chat history. Please check your Firestore security rules.', 'bot');
+});
+}
+
+function displayMessage(message, sender, imageData = null) {
+const messageDiv = document.createElement('div');
+messageDiv.classList.add('message');
+if (sender === 'user') {
+messageDiv.classList.add('user-message');
+} else {
+messageDiv.classList.add('bot-message');
+}
+
+if (imageData) {
+const img = document.createElement('img');
+img.src = data:image/jpeg;base64,${imageData};
+img.classList.add('image-preview');
+messageDiv.appendChild(img);
+
+// Add text content below the image
+const textNode = document.createTextNode(message);
+messageDiv.appendChild(textNode);
+} else {
+// Text only message
+messageDiv.textContent = message;
+}
+chatBody.appendChild(messageDiv);
+}
+
+// --- UI Update & Settings Handlers ---
+
+function updateUIForSettings() {
+// 1. Theme
+document.body.classList.toggle('dark-mode', currentTheme === 'dark');
+
+// 2. Layout
+document.body.classList.toggle('mobile-view', currentLayout === 'mobile');
+
+// 3. Persona
+document.querySelectorAll('#persona-options .option-button').forEach(btn => {
+btn.classList.toggle('active', btn.dataset.persona === currentPersona);
+});
+
+// 4. Theme
+document.querySelectorAll('#theme-options .option-button').forEach(btn => {
+btn.classList.toggle('active', btn.dataset.theme === currentTheme);
+});
+
+// 5. Layout
+document.querySelectorAll('#layout-options .option-button').forEach(btn => {
+btn.classList.toggle('active', btn.dataset.layout === currentLayout);
+});
+
+// 6. City (NEW)
+document.querySelectorAll('#city-options .option-button').forEach(btn => {
+btn.classList.toggle('active', btn.dataset.city === currentCity);
+});
+
+// Re-fetch weather if the city changed, but only if user is logged in
+if (userId) {
+fetchWeather(currentCity);
+}
+}
+
+// --- AUTHENTICATION LOGIC ---
+
+function showAuthMessage(message, isError = false) {
+authMessage.textContent = message;
+authMessage.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800');
+authMessage.classList.add(isError ? 'bg-red-200' : 'bg-green-200');
+authMessage.classList.add(isError ? 'text-red-800' : 'text-green-800');
+}
+
+function clearAuthMessage() {
+authMessage.classList.add('hidden');
+authMessage.textContent = '';
+}
+
+function toggleAuthMode(mode) {
+clearAuthMessage();
+
+// Map the tab mode to the actual panel ID
+const panelIdMap = {
+'status': 'auth-profile',
+'login': 'login-form',
+'signup': 'signup-form'
+};
+
+const targetPanelId = panelIdMap[mode];
+const targetTabBtn = document.getElementById(tab-${mode});
+const targetPanel = document.getElementById(targetPanelId);
+
+// 1. Hide all panels
+document.querySelectorAll('.auth-panel').forEach(panel => {
+if (panel) panel.classList.add('hidden');
+});
+
+// 2. Deactivate all tabs
+document.querySelectorAll('.tab-button').forEach(btn => {
+if (btn) btn.classList.remove('active');
+});
+
+// 3. Activate the requested tab and panel (with null checks)
+if (targetTabBtn) {
+targetTabBtn.classList.add('active');
+} else {
+console.error(Tab button for mode '${mode}' not found.);
+}
+
+if (targetPanel) {
+targetPanel.classList.remove('hidden');
+} else {
+console.error(Auth panel for mode '${mode}' (ID: ${targetPanelId}) not found.);
+}
+}
+
+async function handleSignIn(e) {
+e.preventDefault();
+const email = document.getElementById('login-email').value;
+const password = document.getElementById('login-password').value;
+clearAuthMessage();
+
+if (!email || !password) {
+showAuthMessage("Email and password are required.", true);
+return;
+}
+
+try {
+// 1. Sign out the current user (if any, typically from a custom token)
+if (auth.currentUser) {
+await signOut(auth);
+}
+
+// 2. Sign in with the provided credentials
+await signInWithEmailAndPassword(auth, email, password);
+
+showAuthMessage(Successfully logged in as ${email}., false);
+toggleAuthMode('status');
+document.getElementById('login-password').value = ''; // Clear password field
+// onAuthStateChanged handles showing the chat container
+} catch (error) {
+console.error("Sign In Error:", error);
+showAuthMessage(Login Failed: ${error.message.replace('Firebase:', '').trim()}, true);
+}
+}
+
+async function handleSignUp(e) {
+e.preventDefault();
+const email = document.getElementById('signup-email').value;
+const password = document.getElementById('signup-password').value;
+clearAuthMessage();
+
+if (!email || password.length < 6) {
+showAuthMessage("Valid email and a password of at least 6 characters are required.", true);
+return;
+}
+
+try {
+// 1. Sign out the current user 
+if (auth.currentUser) {
+await signOut(auth);
+}
+
+// 2. Create the new user
+await createUserWithEmailAndPassword(auth, email, password);
+
+showAuthMessage(Account created successfully for ${email}. You are now logged in., false);
+toggleAuthMode('status');
+document.getElementById('signup-password').value = ''; // Clear password field
+// onAuthStateChanged handles showing the chat container
+} catch (error) {
+console.error("Sign Up Error:", error);
+showAuthMessage(Sign Up Failed: ${error.message.replace('Firebase:', '').trim()}, true);
+}
+}
+
+async function handleSignOut() {
+clearAuthMessage();
+try {
+// 1. Sign out the currently authenticated user
+await signOut(auth); 
+
+// 2. This will trigger onAuthStateChanged which will call displayLoginRequired()
+showAuthMessage("Signed out successfully. Please log back in.", false);
+toggleAuthMode('login');
+} catch (error) {
+console.error("Sign Out Error:", error);
+showAuthMessage(Sign Out Failed: ${error.message.replace('Firebase:', '').trim()}, true);
+}
+}
+
+// --- End AUTHENTICATION LOGIC ---
+
+// --- Messaging Logic ---
+async function sendMessage() {
+const prompt = userInput.value.trim();
+const data = currentImageData;
+
+// Immediately check if the user is authenticated to prevent unlogged actions
+if (!userId) {
+displayMessage("Please log in or create an account to start chatting.", 'bot');
+return;
+}
+
+if (!prompt && !data) return;
+
+// Clear input and image data immediately
+userInput.value = '';
+currentImageData = null;
+document.getElementById('file-input').value = ''; // Reset file input
+
+// Display user message first
+displayMessage(prompt || "Image sent without text.", 'user', data);
+
+// Save user message to Firestore
+await saveMessage('user', prompt, data);
+
+// Fetch and display bot response
+let botResponse;
+if (data) {
+botResponse = await fetchGeminiVisionResponse(prompt, data);
+} else {
+botResponse = await fetchGeminiResponse(prompt);
+}
+
+// Display bot response
+displayMessage(botResponse, 'bot');
+
+// Save bot response to Firestore
+await saveMessage('bot', botResponse);
+
+chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function handleFileSelect(event) {
+const file = event.target.files[0];
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = (e) => {
+const base64String = e.target.result.split(',')[1];
+currentImageData = base64String;
+userInput.value = "Describe this image in detail and suggest a fun activity related to it.";
+userInput.focus();
+
+// Show a brief preview notification
+displayMessage("Image selected! Enter your prompt and click Send.", "bot");
+};
+reader.readAsDataURL(file);
+}
+
+// --- Camera Logic ---
+function openCameraModal() {
+document.getElementById('camera-modal').classList.remove('hidden');
+document.getElementById('camera-modal').classList.add('flex');
+const video = document.getElementById('camera-video');
+
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) // Use environment camera on mobile
+.then(stream => {
+videoStream = stream;
+video.srcObject = stream;
+video.play();
+})
+.catch(err => {
+console.error("Error accessing camera:", err);
+// Fallback message display in modal
+const content = document.querySelector('#camera-modal .camera-content');
+content.innerHTML = <h2 class="text-xl font-bold mb-4">Camera Error</h2><p class="text-red-500">Could not access camera. Please ensure permissions are granted.</p><button id="cancel-photo-btn-error" class="bg-gray-400 hover:bg-gray-500 flex-1 py-2 px-4 rounded-full text-white font-semibold">Close</button>;
+document.getElementById('cancel-photo-btn-error').addEventListener('click', closeCameraModal);
+});
+} else {
+// Use a custom modal for alert
+const content = document.querySelector('#camera-modal .camera-content');
+content.innerHTML = <h2 class="text-xl font-bold mb-4">Camera Not Supported</h2><p class="text-red-500">Camera not supported on this device/browser.</p><button id="cancel-photo-btn-error" class="bg-gray-400 hover:bg-gray-500 flex-1 py-2 px-4 rounded-full text-white font-semibold">Close</button>;
+document.getElementById('cancel-photo-btn-error').addEventListener('click', closeCameraModal);
+}
+}
+
+function closeCameraModal() {
+if (videoStream) {
+videoStream.getTracks().forEach(track => track.stop());
+videoStream = null;
+}
+document.getElementById('camera-modal').classList.add('hidden');
+document.getElementById('camera-modal').classList.remove('flex');
+
+// Re-render the original camera modal content if it was replaced by error message
+const content = document.querySelector('#camera-modal .camera-content');
+if (!document.getElementById('camera-video')) {
+content.innerHTML = `
+                   <h2 class="text-xl font-bold mb-4">Take a Photo</h2>
+                   <video id="camera-video" autoplay playsinline class="w-full max-w-md rounded-lg shadow-xl mb-4"></video>
+                   <canvas id="camera-canvas" class="hidden"></canvas>
+                   <div class="flex gap-4 w-full max-w-xs">
+                       <button id="cancel-photo-btn" class="bg-red-500 hover:bg-red-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Cancel</button>
+                       <button id="take-photo-btn" class="bg-blue-500 hover:bg-blue-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Take Photo</button>
+                   </div>`;
+// Re-attach listeners after re-rendering the HTML
+document.getElementById('cancel-photo-btn').addEventListener('click', closeCameraModal);
+document.getElementById('take-photo-btn').addEventListener('click', takePhoto);
+}
+}
+
+function takePhoto() {
+const video = document.getElementById('camera-video');
+const canvas = document.getElementById('camera-canvas');
+
+// Set canvas dimensions to match video stream
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+const ctx = canvas.getContext('2d');
+// Draw the current video frame onto the canvas
+ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+// Convert canvas content to base64 JPEG data
+const dataURL = canvas.toDataURL('image/jpeg', 0.8); // 80% quality
+const base64String = dataURL.split(',')[1];
+
+// Set the image data and prompt
+currentImageData = base64String;
+userInput.value = "Describe this image in detail and suggest a fun activity related to it.";
+
+closeCameraModal();
+
+// Notify user that the image is ready
+displayMessage("Photo taken and ready to send! Enter your prompt or click Send.", "bot");
+userInput.focus();
+}
+
+// --- Event Listeners ---
+document.addEventListener('DOMContentLoaded', () => {
+initializeFirebase();
+
+// Auth Modal Listeners
+loginForm.addEventListener('submit', handleSignIn);
+signupForm.addEventListener('submit', handleSignUp);
+document.getElementById('signout-btn').addEventListener('click', handleSignOut);
+document.getElementById('switch-to-signup-btn').addEventListener('click', () => toggleAuthMode('signup'));
+document.getElementById('switch-to-login-btn').addEventListener('click', () => toggleAuthMode('login'));
+document.getElementById('account-btn').addEventListener('click', () => {
+// When opening via button, ensure 'status' is visible if logged in, and allow closing
+toggleAuthMode('status');
+authModal.classList.remove('hidden');
+authModal.classList.add('flex');
+closeAuthBtn.classList.remove('hidden');
+});
+closeAuthBtn.addEventListener('click', () => {
+authModal.classList.add('hidden');
+authModal.classList.remove('flex');
+});
+document.getElementById('tab-status').addEventListener('click', () => toggleAuthMode('status'));
+document.getElementById('tab-login').addEventListener('click', () => toggleAuthMode('login'));
+document.getElementById('tab-signup').addEventListener('click', () => toggleAuthMode('signup'));
+
+// Chat Input Listeners
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('user-input').addEventListener('keypress', (e) => {
+if (e.key === 'Enter') {
+sendMessage();
+}
+});
+document.getElementById('file-btn').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', handleFileSelect);
+
+// Camera Listeners
+document.getElementById('camera-btn').addEventListener('click', openCameraModal);
+
+// Camera modal listeners are dynamically added and removed in the open/close functions, 
+// but we need to ensure the initial ones are set up if they exist.
+const initialCancelBtn = document.getElementById('cancel-photo-btn');
+const initialTakePhotoBtn = document.getElementById('take-photo-btn');
+if (initialCancelBtn) initialCancelBtn.addEventListener('click', closeCameraModal);
+if (initialTakePhotoBtn) initialTakePhotoBtn.addEventListener('click', takePhoto);
+
+// Settings Listeners
+document.getElementById('settings-btn').addEventListener('click', () => {
+updateUIForSettings(); // Ensure UI reflects current state on open
+document.getElementById('settings-modal').classList.remove('hidden');
+});
+document.getElementById('close-settings-btn').addEventListener('click', () => {
+document.getElementById('settings-modal').classList.add('hidden');
+});
+
+// Persona Option Listener
+document.getElementById('persona-options').addEventListener('click', (e) => {
+if (e.target.classList.contains('option-button')) {
+currentPersona = e.target.dataset.persona;
+saveSettings();
+updateUIForSettings();
+}
+});
+
+// Theme Option Listener
+document.getElementById('theme-options').addEventListener('click', (e) => {
+if (e.target.classList.contains('option-button')) {
+currentTheme = e.target.dataset.theme;
+saveSettings();
+updateUIForSettings();
+}
+});
+
+// Layout Option Listener
+document.getElementById('layout-options').addEventListener('click', (e) => {
+if (e.target.classList.contains('option-button')) {
+currentLayout = e.target.dataset.layout;
+saveSettings();
+updateUIForSettings();
+}
+});
+
+// City Option Listener (NEW)
+document.getElementById('city-options').addEventListener('click', (e) => {
+if (e.target.classList.contains('option-button')) {
+const newCity = e.target.dataset.city;
+if (newCity !== currentCity) {
+currentCity = newCity;
+saveSettings();
+updateUIForSettings(); // This will trigger fetchWeather
+}
+}
+});
+
+
+// Placeholder Chat List Modal Listeners (Functionality is currently basic)
+document.getElementById('chat-list-btn').addEventListener('click', async () => {
+// This is a placeholder for future complex chat management UI
+displayMessage("Chat history viewing/switching is coming soon! For now, your most recent chat is loaded.", 'bot');
+});
+
+document.getElementById('create-new-chat-btn').addEventListener('click', async () => {
+// This is a placeholder for future complex chat management UI
+document.getElementById('chat-list-modal').classList.add('hidden');
+await createNewChatSession();
+displayMessage("New chat started! History cleared for this session.", 'bot');
+});
+
+document.getElementById('close-chat-list-btn').addEventListener('click', () => {
+document.getElementById('chat-list-modal').classList.add('hidden');
+});
+
+});
+</script>
+</body>
+</html>
