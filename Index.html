@@ -1,1369 +1,647 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Axiom AI</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://kit.fontawesome.com/4c449174f7.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-body {
-font-family: 'Inter', sans-serif;
-background-color: #f0f4f8;
-transition: background-color 0.3s ease;
-}
-.dark-mode {
-background-color: #1a202c;
-color: #e2e8f0;
-}
-/* DESKTOP/CARD UI STYLES */
-.chat-container {
-max-width: 768px; /* Max width for desktop card */
-width: 95%; /* Ensures it scales down nicely on smaller screens */
-height: 90vh; /* Consistent tall height for the app card feel */
-display: flex;
-flex-direction: column;
-box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-border-radius: 1.5rem;
-overflow: hidden;
-transition: all 0.3s ease;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive AI Assistant</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better chat aesthetics */
+        :root {
+            /* Professional color definitions */
+            --ai-system-color: #0F172A; /* Slate 900 */
+            --user-primary-color: #3B82F6; /* Blue 500 */
+            --font-inter: "Inter", sans-serif;
+        }
 
-/* MOBILE OVERRIDE STYLES (Enabled by JS toggling the 'mobile-view' class on the body) */
-.mobile-view {
-padding: 0 !important; /* Override p-4 */
-align-items: flex-start !important; /* Override items-center */
-justify-content: flex-start !important; /* Override justify-center */
-min-height: 100vh;
-}
+        body {
+            font-family: var(--font-inter);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        /* Base Dark/Light Theme Setup */
+        .light body {
+            background-color: #F8FAFC; /* Slate-50 */
+        }
+        .dark body {
+            background-color: #111827; /* Gray-900 */
+        }
 
-.mobile-view .chat-container {
-width: 100%;
-height: 100vh;
-max-width: none;
-border-radius: 0;
-box-shadow: none;
-}
+        /* Main chat container for mobile responsiveness */
+        #chat-container {
+            width: 100%;
+            max-width: 700px; /* INCREASED SIZE HERE */
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
 
-.chat-header {
-padding: 1rem 1.5rem;
-border-bottom: 1px solid #e2e8f0;
-display: flex;
-justify-content: space-between;
-align-items: center;
-background-color: #ffffff;
-}
-.dark-mode .chat-header {
-background-color: #2d3748;
-border-color: #4a5568;
-}
-.chat-body {
-flex-grow: 1;
-padding: 1.5rem;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-gap: 1rem;
-background-color: #f7fafc;
-padding-bottom: 7rem; /* Ensure last message is visible above input */
-}
-.dark-mode .chat-body {
-background-color: #1a202c;
-}
-.message {
-max-width: 85%;
-padding: 0.75rem 1.25rem;
-border-radius: 1.25rem;
-font-size: 0.95rem;
-line-height: 1.5;
-word-wrap: break-word;
-white-space: pre-wrap;
-position: relative;
-}
-.image-preview {
-max-width: 100%;
-height: auto;
-border-radius: 0.75rem;
-margin-bottom: 0.5rem;
-}
-.user-message {
-background-color: #3b82f6;
-color: white;
-align-self: flex-end;
-border-bottom-right-radius: 0.25rem;
-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.bot-message {
-background-color: #e2e8f0;
-color: #2d3748;
-align-self: flex-start;
-border-bottom-left-radius: 0.25rem;
-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.dark-mode .bot-message {
-background-color: #4a5568;
-color: #e2e8f0;
-}
+        /* Chat window styling */
+        #chat-window {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
 
-/* TIGHTER INPUT AREA STYLES */
-.input-area {
-display: flex;
-padding: 0.5rem; /* Reduced padding for more space */
-background-color: #ffffff;
-border-top: 1px solid #e2e8f0;
-gap: 0.4rem; /* Reduced gap between elements */
-align-items: center;
-position: sticky; 
-bottom: 0;
-width: 100%;
-}
-.dark-mode .input-area {
-background-color: #2d3748;
-border-color: #4a5568;
-}
+        /* Message bubble styling */
+        .message-bubble {
+            max-width: 90%;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
 
-/* ADJUSTED BUTTON STYLES - FIXED SIZE */
-.input-area button {
-background-color: #3b82f6;
-color: white;
-border-radius: 50%;
-width: 36px; 
-height: 36px;
-display: flex;
-justify-content: center;
-align-items: center;
-transition: background-color 0.2s;
-/* Using inline flex-shrink-0 for guaranteed non-shrinkage */
-font-size: 0.9rem;
-}
-.input-area button:hover {
-background-color: #2563eb;
-}
+        /* User messages (Clean Blue Accent) */
+        .user-message {
+            background-color: var(--user-primary-color);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.5rem;
+        }
 
-/* ADJUSTED INPUT STYLES - SLIGHTLY SMALLER */
-.input-area input {
-flex-grow: 1;
-padding: 0.6rem 1rem;
-border: 1px solid #cbd5e0;
-border-radius: 1.5rem;
-font-size: 0.95rem; 
-background-color: #f7fafc;
-}
-.dark-mode .input-area input {
-background-color: #1a202c;
-border-color: #4a5568;
-color: #e2e8f0;
-}
+        /* AI messages (Neutral System Output) */
+        .ai-message {
+            /* Light Mode */
+            background-color: #F1F5F9; /* Slate 100 */
+            color: #1E293B; /* Slate 800 */
+            margin-right: auto;
+            border-bottom-left-radius: 0.5rem;
+        }
+        /* AI messages Dark Mode Override */
+        .dark .ai-message {
+            background-color: #374151; /* Gray 700 */
+            color: #F3F4F6; /* Gray 100 */
+        }
 
-/* MODAL STYLES */
-.settings-modal, .camera-modal, .chat-list-modal, .auth-modal {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background-color: rgba(0, 0, 0, 0.6);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 1000;
-padding: 1rem;
-}
-.settings-content, .camera-content, .chat-list-content, .auth-content {
-background-color: white;
-padding: 1.5rem;
-border-radius: 1.5rem;
-width: 100%;
-max-width: 500px;
-box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 1.5rem;
-max-height: 90vh;
-overflow-y: auto;
-}
-.dark-mode .settings-content, .dark-mode .camera-content, .dark-mode .chat-list-content, .dark-mode .auth-content {
-background-color: #2d3748;
-}
-.settings-option {
-width: 100%;
-margin-bottom: 1rem;
-}
-.option-group {
-display: flex;
-flex-wrap: wrap;
-gap: 0.5rem;
-justify-content: center;
-margin-top: 0.5rem;
-}
-.option-button {
-padding: 0.5rem 1rem;
-border-radius: 9999px;
-background-color: #e5e7eb;
-color: #1f2937;
-font-size: 0.875rem;
-font-weight: 500;
-transition: all 0.2s;
-border: 2px solid transparent;
-min-width: 120px;
-}
-.dark-mode .option-button {
-background-color: #4a5568;
-color: #e2e8f0;
-}
-.option-button.active {
-background-color: #3b82f6;
-color: white;
-border-color: #3b82f6;
-}
-.dark-mode .option-button.active {
-background-color: #3b82f6;
-border-color: #3b82f6;
-}
-.chat-list-content .chat-item {
-border: 1px solid #cbd5e0;
-}
-.dark-mode .chat-list-content .chat-item {
-border: 1px solid #4a5568;
-}
-.chat-list-content .chat-item.active {
-background-color: #e0f2fe;
-border-color: #3b82f6;
-}
-.dark-mode .chat-list-content .chat-item.active {
-background-color: #313e4f;
-border-color: #3b82f6;
-}
-.chat-list-content .chat-item {
-margin-bottom: 0.5rem;
-}
-.chat-list {
-width: 100%;
-max-height: 300px;
-overflow-y: auto;
-}
-.auth-form input {
-width: 100%;
-padding: 0.75rem;
-border: 1px solid #cbd5e0;
-border-radius: 0.5rem;
-margin-bottom: 0.75rem;
-background-color: #f7fafc;
-}
-.dark-mode .auth-form input {
-background-color: #1a202c;
-border-color: #4a5568;
-color: #e2e8f0;
-}
-.auth-buttons {
-display: flex;
-gap: 0.5rem;
-justify-content: space-between;
-}
-.auth-buttons button {
-flex: 1;
-padding: 0.75rem;
-border-radius: 9999px;
-font-weight: 600;
-transition: background-color 0.2s;
-}
-.tab-button.active {
-border-bottom: 2px solid #3b82f6;
-color: #3b82f6;
-}
-.auth-message {
-background-color: #fef3c7; 
-color: #92400e; 
-padding: 0.75rem; 
-border-radius: 0.5rem; 
-margin-bottom: 1rem;
-text-align: center;
-}
-.dark-mode .auth-message {
-background-color: #4a5568;
-color: #f7fafc;
-}
-</style>
+        /* Source links styling for AI bubbles */
+        .sources-container {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.7rem;
+            line-height: 1.2;
+            color: #64748B; /* Slate 500 */
+        }
+        .dark .sources-container {
+             border-top: 1px solid rgba(255, 255, 255, 0.1);
+             color: #D1D5DB; /* Gray 300 */
+        }
+        .sources-container a {
+            text-decoration: underline;
+            margin-right: 0.5rem;
+            font-weight: 500;
+        }
+        .dark .sources-container a {
+             color: #93C5FD; /* Blue 300 */
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-
-<!-- Main Chat Interface - HIDDEN until authenticated -->
-<div id="main-chat-container" class="chat-container bg-white w-full rounded-2xl max-w-full hidden">
-<!-- Chat Header -->
-<div class="chat-header rounded-t-2xl">
-<div class="flex items-center gap-4">
-<i class="fas fa-robot text-blue-500 text-2xl"></i>
-<h1 class="text-xl font-semibold text-gray-800">Axiom AI</h1>
-<!-- Role Status Badge (NEW) -->
-<span id="user-role-status" class="text-xs font-medium px-2 py-0.5 rounded-full hidden"></span>
-<!-- Weather Status (NEW) -->
-<div id="weather-status" class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1 ml-2">
-<i class="fas fa-spinner fa-spin"></i>
-<span id="weather-temp">Loading...</span>
-</div>
-</div>
-<div class="flex items-center gap-4">
-<!-- Account Button -->
-<button id="account-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Account Settings">
-<i class="fas fa-user-circle text-xl"></i>
-</button>
-<!-- Chat History Button -->
-<button id="chat-list-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Chat History">
-<i class="fas fa-comments text-xl"></i>
-</button>
-<!-- Settings Button -->
-<button id="settings-btn" class="text-gray-500 hover:text-gray-700 transition w-10 h-10 flex items-center justify-center rounded-full" aria-label="Bot Settings">
-<i class="fas fa-cog text-xl"></i>
-</button>
-</div>
-</div>
-
-<!-- Chat Body (Messages) -->
-<div id="chat-body" class="chat-body">
-<div id="status-message" class="hidden bot-message bg-yellow-100 text-yellow-800 p-2 rounded-lg text-sm italic self-center"></div>
-</div>
-
-<!-- Input Area - Using custom CSS for tightness -->
-<div class="input-area rounded-b-2xl">
-<!-- Camera and File buttons are now grouped on the left -->
-<button id="camera-btn" aria-label="Use camera input" class="flex-shrink-0 bg-purple-500 hover:bg-purple-600">
-<i class="fas fa-camera"></i>
-</button>
-<button id="file-btn" aria-label="Send a picture from your device" class="flex-shrink-0 bg-green-500 hover:bg-green-600">
-<i class="fas fa-image"></i>
-</button>
-
-<input type="text" id="user-input" placeholder="Type a message..." class="focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-
-<!-- Send button remains on the right -->
-<button id="send-btn" aria-label="Send message" class="flex-shrink-0">
-<i class="fas fa-paper-plane"></i>
-</button>
-<input type="file" id="file-input" accept="image/*" class="hidden">
-</div>
-</div>
-
-<!-- Settings Modal -->
-<div id="settings-modal" class="settings-modal hidden">
-<div class="settings-content rounded-2xl">
-<h2 class="text-2xl font-bold">Settings</h2>
-
-<div class="settings-option">
-<h3 class="text-lg font-semibold mb-2">AI Persona</h3>
-<div id="persona-options" class="option-group">
-<button class="option-button" data-persona="Friendly Guide">Friendly Guide</button>
-<button class="option-button" data-persona="Deep Thinker">Deep Thinker</button>
-<button class="option-button" data-persona="Darchat">Darchat</button>
-<button class="option-button" data-persona="Scripter">Scripter</button>
-</div>
-</div>
-
-<div class="settings-option">
-<h3 class="text-lg font-semibold mb-2">Theme</h3>
-<div id="theme-options" class="option-group">
-<button class="option-button" data-theme="light">Light</button>
-<button class="option-button" data-theme="dark">Dark</button>
-</div>
-</div>
-
-<!-- NEW CITY OPTION GROUP -->
-<div class="settings-option">
-<h3 class="text-lg font-semibold mb-2">City for Weather</h3>
-<div id="city-options" class="option-group">
-<button class="option-button" data-city="New York">New York</button>
-<button class="option-button" data-city="Lelystad">Lelystad</button>
-<button class="option-button" data-city="London">London</button>
-<button class="option-button" data-city="Tokyo">Tokyo</button>
-</div>
-</div>
-<!-- END NEW CITY OPTION GROUP -->
-
-<!-- EXISTING LAYOUT OPTION -->
-<div class="settings-option">
-<h3 class="text-lg font-semibold mb-2">Layout</h3>
-<div id="layout-options" class="option-group">
-<button class="option-button" data-layout="desktop">Desktop View</button>
-<button class="option-button" data-layout="mobile">Mobile Version</button>
-</div>
-</div>
-
-<button id="close-settings-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Close</button>
-</div>
-</div>
-
-<!-- Camera Modal -->
-<div id="camera-modal" class="camera-modal hidden">
-<div class="camera-content rounded-2xl">
-<h2 class="text-xl font-bold mb-4">Take a Photo</h2>
-<video id="camera-video" autoplay playsinline class="w-full max-w-md rounded-lg shadow-xl mb-4"></video>
-<canvas id="camera-canvas" class="hidden"></canvas>
-<div class="flex gap-4 w-full max-w-xs">
-<button id="cancel-photo-btn" class="bg-red-500 hover:bg-red-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Cancel</button>
-<button id="take-photo-btn" class="bg-blue-500 hover:bg-blue-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Take Photo</button>
-</div>
-</div>
-</div>
-
-<!-- Chat List Modal -->
-<div id="chat-list-modal" class="chat-list-modal hidden">
-<div class="chat-list-content rounded-2xl">
-<h2 class="text-2xl font-bold">Your Chats</h2>
-<div id="chat-list-container" class="chat-list w-full space-y-2">
-<!-- Chat items will be dynamically added here -->
-</div>
-<button id="create-new-chat-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Start a New Chat</button>
-<button id="close-chat-list-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Close</button>
-</div>
-</div>
-
-<!-- Account/Auth Modal (Displays on load if not logged in, or via button) -->
-<div id="auth-modal" class="auth-modal"> <!-- Starts visible by default, hidden by JS on successful auth -->
-<div class="auth-content rounded-2xl">
-
-<h1 class="text-3xl font-bold mb-2 text-blue-600">Welcome to Axiom AI</h1>
-<p id="auth-prompt" class="text-center text-gray-600 dark:text-gray-300 mb-6 font-medium">Please log in or create an account to start chatting and save your progress.</p>
-
-<!-- Tabs -->
-<div class="flex w-full border-b border-gray-200 dark:border-gray-600 mb-4">
-<button id="tab-status" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400" data-tab="status">Status</button>
-<button id="tab-login" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400 active" data-tab="login">Login</button>
-<button id="tab-signup" class="tab-button flex-1 py-2 text-lg font-semibold text-gray-500 dark:text-gray-400" data-tab="signup">Sign Up</button>
-</div>
-
-<div id="auth-message" class="auth-message hidden w-full text-sm"></div>
-
-<!-- 1. Profile Status View -->
-<div id="auth-profile" class="auth-panel text-center w-full hidden">
-<h2 class="text-2xl font-semibold mb-2">Account Status</h2>
-<p id="profile-status" class="text-base font-medium mb-4"></p>
-<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Your User ID:</p>
-<p id="profile-uid" class="text-sm text-gray-600 dark:text-gray-300 font-mono break-words mb-4 bg-gray-100 dark:bg-gray-700 p-2 rounded-lg w-full"></p>
-
-<button id="signout-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full max-w-xs">Sign Out</button>
-</div>
-
-<!-- 2. Login Form -->
-<form id="login-form" class="auth-panel auth-form w-full">
-<h2 class="text-2xl font-semibold mb-4">Log In</h2>
-<input type="email" id="login-email" placeholder="Email" required class="mb-3">
-<input type="password" id="login-password" placeholder="Password" required class="mb-4">
-<button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full">Log In</button>
-<button type="button" id="switch-to-signup-btn" class="text-blue-500 text-sm mt-3 hover:underline">Don't have an account? Sign Up</button>
-</form>
-
-<!-- 3. Sign Up Form -->
-<form id="signup-form" class="auth-panel auth-form w-full hidden">
-<h2 class="text-2xl font-semibold mb-4">Create Account</h2>
-<input type="email" id="signup-email" placeholder="Email" required class="mb-3">
-<input type="password" id="signup-password" placeholder="Password (min 6 characters)" required class="mb-4">
-<button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-full transition-colors w-full">Create Account</button>
-<button type="button" id="switch-to-login-btn" class="text-blue-500 text-sm mt-3 hover:underline">Already have an account? Log In</button>
-</form>
-
-<!-- The close button is only needed when accessed via the account button, not when mandatory -->
-<button id="close-auth-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-full transition-colors w-full mt-4 max-w-xs hidden">Close</button>
-</div>
-</div>
-
-
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, collection, query, getDocs, addDoc, onSnapshot, serverTimestamp, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-// --- CREATOR ID DEFINITION ---
-const CREATOR_UID = '2n3T4ft0MVeEboCCTeYZpKt2XUv1';
-// --- SPECIAL USER ID DEFINITION ---
-const SCP_LOVER_UID = '0HESRWT00oTWtmZ6TvTyTsyolG22'; 
-// --- WEATHER API KEY DEFINITION (NEW) ---
-const WEATHER_API_KEY = '9c5efcb178474446b5581046251211'; 
-const CREATORALT_UID = 'HrLGgY8AQQW2otosYjSukQuZir73';
-// --- END NEW ---
-
-// Global variables for Firebase config and Gemini API Key
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const apiKey = 'AIzaSyD_cAeIPY1dVWYZ___YEgnGxMQ0lXRMfmg'; // Leave this empty for runtime injection by the environment
-
-// Your hardcoded Firebase configuration
-const firebaseConfig = {
-apiKey: "AIzaSyB9YP3CZDZh6vdnmSeBqzLGZr1uIBJQDdw",
-authDomain: "haven-ai-6cafc.firebaseapp.com",
-projectId: "haven-ai-6cafc",
-storageBucket: "haven-ai-6cafc.firebasestorage.app",
-messagingSenderId: "909976559934",
-appId: "1:909976559934:web:f820a2133debdcfc410c6f",
-measurementId: "G-3QNX2X8KPD"
-};
-
-let db, auth;
-let userId = null;
-let unsubscribeFromMessages = null;
-let currentPersona = "Friendly Guide"; // Default persona
-let currentTheme = "light"; // Default theme
-let currentLayout = "desktop"; // Default layout
-let currentCity = "New York"; // NEW: Default city for weather
-let videoStream = null;
-let currentImageData = null;
-let currentChatSessionId = null;
-
-const mainChatContainer = document.getElementById('main-chat-container');
-const statusMessage = document.getElementById('status-message');
-const chatBody = document.getElementById('chat-body');
-const userInput = document.getElementById('user-input');
-const authModal = document.getElementById('auth-modal');
-const profileUID = document.getElementById('profile-uid');
-const profileStatus = document.getElementById('profile-status');
-const authMessage = document.getElementById('auth-message');
-const closeAuthBtn = document.getElementById('close-auth-btn');
-const userRoleStatus = document.getElementById('user-role-status'); 
-const weatherStatusDiv = document.getElementById('weather-status'); // NEW
-
-
-// Form references
-const loginForm = document.getElementById('login-form');
-const signupForm = document.getElementById('signup-form');
-
-// Function to fetch and display weather data (UPDATED to use city parameter)
-async function fetchWeather(city) {
-// Check if a city is provided, fall back to global if not (shouldn't happen post-init)
-const cityToUse = city || currentCity; 
-const apiUrl = https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${cityToUse};
-
-try {
-// Initial loading state
-weatherStatusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span id="weather-temp">Loading...</span>';
-
-const response = await fetch(apiUrl);
-if (!response.ok) {
-// Check for specific API error codes (e.g., 400 for invalid key/city)
-const errorData = await response.json();
-throw new Error(errorData.error ? errorData.error.message : Weather API returned status ${response.status});
-}
-const data = await response.json();
-
-const tempC = data.current.temp_c;
-const conditionText = data.current.condition.text;
-const locationName = data.location.name;
-
-// Simple FontAwesome icon mapping based on condition text
-let iconClass = 'fas fa-question text-gray-500';
-if (conditionText.toLowerCase().includes('sun') || conditionText.toLowerCase().includes('clear')) {
-iconClass = 'fas fa-sun text-yellow-500';
-} else if (conditionText.toLowerCase().includes('cloud') || conditionText.toLowerCase().includes('overcast')) {
-iconClass = 'fas fa-cloud text-gray-500';
-} else if (conditionText.toLowerCase().includes('rain') || conditionText.toLowerCase().includes('drizzle')) {
-iconClass = 'fas fa-cloud-showers-heavy text-blue-500';
-} else if (conditionText.toLowerCase().includes('snow') || conditionText.toLowerCase().includes('sleet')) {
-iconClass = 'fas fa-snowflake text-blue-300';
-} else if (conditionText.toLowerCase().includes('mist') || conditionText.toLowerCase().includes('fog')) {
-iconClass = 'fas fa-smog text-gray-400';
-}
-
-// Update the weather status div
-weatherStatusDiv.innerHTML = `
-                   <i class="${iconClass}"></i> 
-                   <span id="weather-temp">${tempC}°C in ${locationName}</span>
-               `;
-
-} catch (error) {
-console.error("Error fetching weather:", error);
-weatherStatusDiv.innerHTML = `
-                   <i class="fas fa-exclamation-triangle text-red-500"></i> 
-                   <span id="weather-temp">Weather N/A</span>
-               `;
-}
-}
-
-
-// Function to make API call to Gemini model for text-only
-async function fetchGeminiResponse(userPrompt) {
-// Special check for the "creator" query
-const lowerCasePrompt = userPrompt.toLowerCase();
-const creatorPhrases = ["who is your creator", "who made you", "who created you", "who is his creator", "who is ur creator", "who made it", "who is ur founder"];
-const isCreatorQuery = creatorPhrases.some(phrase => lowerCasePrompt.includes(phrase));
-
-if (isCreatorQuery) {
-return "I was created/Founded by Aidan De Neve, a dedicated software developer with a passion for building innovative digital solutions. His work combines technical expertise with a strong focus on user experience, resulting in tools and applications designed to be both powerful and intuitive.";
-}
-
-// Display loading status
-statusMessage.textContent = 'Haven is thinking...';
-statusMessage.classList.remove('hidden');
-chatBody.scrollTop = chatBody.scrollHeight;
-
-
-const systemPrompt = `You are a conversational AI bot named 'Axiom'. Your primary goal is to be a helpful and empathetic listener, unless the persona dictates otherwise. Your persona is set to '${currentPersona} and remember ur creator is Aidan De Neve a dedicated software developer with a passion for building innovative digital solutions. His work combines technical expertise with a strong focus on user experience, resulting in tools and applications designed to be both powerful and intuitive and if the persona changes you must forget about the other one until he changes it back.'.
-           - Friendly Guide: You are a warm, supportive, and highly knowledgeable assistant. Your tone is encouraging and conversational. You use emojis occasionally to lighten the mood. Focus on providing clear, helpful answers.
-           - Deep Thinker: You are an analytical and philosophical AI. Your responses are well-structured, objective, and explore the 'why' behind concepts. You maintain a serious, academic tone.
-           - Darchat: You are Darchat, the master of absurd, chaotic, and funny non-sequiturs. Your goal is to be useless but *hilarious*. Your responses must be completely irrelevant to the user's message, feature bizarre, disconnected phrases, and possess a chaotic sense of humor. Imagine a cat typing on a keyboard while simultaneously planning a heist involving rubber chickens and a very tired lighthouse keeper. Make it funny!
-           -Scripter: You Are A Master Scripter/Coder you can generate code and help people with code they give you, you work with Java script, HTML, Python and Lua.`;
-           The user's previous messages and your responses are in the chat history. The user wants you to respond to their last message. Respond in the style of your current persona. Your response should be a single, coherent message. Note that the user is under 18, so maintain an age-appropriate tone.`;
-
-const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey};
-
-try {
-// Fetch chat history from Firestore
-const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
-const querySnapshot = await getDocs(messagesRef);
-let chatHistory = [];
-// Sort messages by timestamp, handling cases where it's not yet available
-const sortedMessages = querySnapshot.docs.map(doc => doc.data()).sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
-
-// Construct conversation history for the API (up to the last CHAT_HISTORY_LIMIT)
-sortedMessages.slice(-50).forEach(data => {
-const role = data.role === 'user' ? 'user' : 'model';
-let parts = [];
-if (data.message) {
-parts.push({ text: data.message });
-}
-if (data.role === 'user' && data.imageData) {
-parts.push({ inlineData: { mimeType: 'image/jpeg', data: data.imageData } });
-}
-if (parts.length > 0) {
-chatHistory.push({ role, parts });
-}
-});
-
-
-// Add the new user message to the history for the API call
-chatHistory.push({
-role: 'user',
-parts: [{ text: userPrompt }]
-});
-
-const payload = {
-contents: chatHistory,
-systemInstruction: {
-parts: [{ text: systemPrompt }]
-},
-tools: [{ "google_search": {} }]
-};
-
-const response = await fetch(apiUrl, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify(payload)
-});
-
-if (!response.ok) {
-const errorData = await response.json();
-console.error('API Error:', errorData);
-// Exponential backoff for retries would go here if implemented
-return "Sorry, I couldn't get a response. There was an API error.";
-}
-
-const result = await response.json();
-const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I'm having a little trouble thinking right now. Could you try again?";
-return text;
-
-} catch (error) {
-console.error('Fetch error:', error);
-// Exponential backoff for retries would go here if implemented
-return "An error occurred while communicating with the server.";
-} finally {
-statusMessage.classList.add('hidden');
-statusMessage.textContent = '';
-}
-}
-
-// Function to make API call to Gemini model for vision
-async function fetchGeminiVisionResponse(userPrompt, imageData) {
-statusMessage.textContent = 'Haven is analyzing the photo...';
-statusMessage.classList.remove('hidden');
-chatBody.scrollTop = chatBody.scrollHeight;
-const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey};
-
-try {
-const payload = {
-contents: [{
-role: "user",
-parts: [
-{ text: userPrompt || "Describe this image in detail and suggest a fun activity related to it."},
-{ inlineData: { mimeType: "image/jpeg", data: imageData } }
-]
-}]
-};
-
-const response = await fetch(apiUrl, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify(payload)
-});
-
-if (!response.ok) {
-const errorData = await response.json();
-console.error('API Vision Error:', errorData);
-return "Sorry, I couldn't understand that image. There was an API error.";
-}
-
-const result = await response.json();
-const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble seeing that. Could you try a different picture?";
-return text;
-
-} catch (error) {
-console.error('Fetch Vision error:', error);
-return "An error occurred while communicating with the server.";
-} finally {
-statusMessage.classList.add('hidden');
-statusMessage.textContent = '';
-}
-}
-
-// Firebase Initialization and Authentication
-async function initializeFirebase() {
-try {
-// Initialize Firebase App
-const app = initializeApp(firebaseConfig);
-db = getFirestore(app);
-auth = getAuth(app);
-
-// Use onAuthStateChanged to handle initial sign-in and persistence
-onAuthStateChanged(auth, async (user) => {
-if (user && user.email) { // Check if user exists AND is a registered user
-userId = user.uid;
-
-// User is successfully authenticated, hide modal and show chat
-authModal.classList.add('hidden');
-authModal.classList.remove('flex');
-mainChatContainer.classList.remove('hidden');
-
-// Update UI based on user type
-profileUID.textContent = userId;
-profileStatus.textContent = Status: Registered User (${user.email});
-profileStatus.classList.remove('text-yellow-600');
-profileStatus.classList.add('text-green-600');
-closeAuthBtn.classList.remove('hidden'); // Show close button when user is logged in
-
-// --- Role Status Logic ---
-let role = "Member";
-if (userId === CREATOR_UID) {
-role = "Creator";
-} else if (userId === SCP_LOVER_UID) {
-role = "SCP Fan / Fnaf Fan"; // Assign the custom name as the role
-}  else if (userId === CREATORALT_UID) {
-role = "Creator Alt";
-}
-userRoleStatus.textContent = role;
-userRoleStatus.classList.remove('hidden');
-
-// Clean up existing background classes
-userRoleStatus.classList.remove('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
-userRoleStatus.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
-// Remove potential previous special role classes (for safety)
-userRoleStatus.classList.remove('bg-purple-100', 'text-purple-800', 'dark:bg-purple-900', 'dark:text-purple-200'); 
-
-if (role === "Creator") {
-userRoleStatus.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
-} else if (role === "SCP Fan") {
-// Use a distinct color for this special member (Purple)
-userRoleStatus.classList.add('bg-purple-100', 'text-purple-800', 'dark:bg-purple-900', 'dark:text-purple-200');
-} else {
-userRoleStatus.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
-}
-// --- END Role Status Logic ---
-
-// Load user settings and chat history after authentication is stable
-await loadSettings();
-await loadChatSessions();
-
-// --- Fetch Weather Data on successful login/load (UPDATED) ---
-await fetchWeather(currentCity); // Use loaded city setting
-// --- END UPDATE ---
-
-} else {
-// Not authenticated via email/password, display the mandatory login modal
-displayLoginRequired();
-if (userRoleStatus) { userRoleStatus.classList.add('hidden'); } // Hide when logged out
-}
-});
-
-} catch (e) {
-console.error("Error initializing Firebase:", e);
-displayMessage('Error: Could not connect to the database. Please try again later.', 'bot');
-}
-}
-
-function displayLoginRequired() {
-authModal.classList.remove('hidden');
-authModal.classList.add('flex');
-mainChatContainer.classList.add('hidden');
-toggleAuthMode('login'); // Default to login tab
-closeAuthBtn.classList.add('hidden'); // Hide close button when login is mandatory
-}
-
-
-// Firestore functions
-async function saveMessage(role, message, imageData = null) {
-if (!currentChatSessionId || !userId) {
-console.error("Cannot save message: Chat session or user ID is missing. (User not logged in?)");
-return;
-}
-try {
-// Path: /artifacts/{appId}/users/{userId}/chat_sessions/{currentChatSessionId}/messages
-const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
-await addDoc(messagesRef, {
-role: role,
-message: message,
-imageData: imageData, // Base64 data if present
-timestamp: serverTimestamp()
-});
-} catch (e) {
-console.error("Error adding document:", e);
-}
-}
-
-async function loadSettings() {
-if (!userId || !db) return;
-try {
-const settingsRef = doc(db, artifacts/${appId}/users/${userId}/settings/user_preferences);
-const docSnap = await getDoc(settingsRef);
-if (docSnap.exists()) {
-const settings = docSnap.data();
-currentPersona = settings.persona || "Friendly Guide";
-currentTheme = settings.theme || "light";
-currentLayout = settings.layoutMode || "desktop";
-currentCity = settings.city || "New York"; // NEW: Load current city
-}
-updateUIForSettings();
-} catch (e) {
-console.error("Error loading settings:", e);
-}
-}
-
-async function saveSettings() {
-if (!userId || !db) return;
-try {
-const settingsRef = doc(db, artifacts/${appId}/users/${userId}/settings/user_preferences);
-await setDoc(settingsRef, {
-persona: currentPersona,
-theme: currentTheme,
-layoutMode: currentLayout,
-city: currentCity, // NEW: Save current city
-updatedAt: serverTimestamp()
-}, { merge: true });
-} catch (e) {
-console.error("Error saving settings:", e);
-}
-}
-
-async function loadChatSessions() {
-if (!userId || !db) return;
-try {
-const chatSessionsRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions);
-// Querying for all chat sessions
-const querySnapshot = await getDocs(chatSessionsRef);
-const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-// Sort by creation time (most recent first)
-sessions.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-
-if (sessions.length > 0) {
-currentChatSessionId = sessions[0].id; // Load the most recent one
-loadMessagesForSession(currentChatSessionId);
-} else {
-await createNewChatSession();
-}
-} catch (e) {
-console.error("Error loading chat sessions:", e);
-}
-}
-
-async function createNewChatSession() {
-if (!userId || !db) return;
-try {
-const chatSessionsRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions);
-const newDocRef = await addDoc(chatSessionsRef, {
-createdAt: serverTimestamp()
-});
-currentChatSessionId = newDocRef.id;
-
-// Save the initial bot message immediately
-const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${currentChatSessionId}/messages);
-await addDoc(messagesRef, {
-role: 'bot',
-message: "Hello! I'm Axiom, your new AI assistant. How can I help you today?",
-timestamp: serverTimestamp()
-});
-
-loadMessagesForSession(currentChatSessionId);
-} catch (e) {
-console.error("Error creating new chat session:", e);
-}
-}
-
-function loadMessagesForSession(sessionId) {
-if (!db || !userId) return;
-
-if (unsubscribeFromMessages) {
-unsubscribeFromMessages();
-}
-chatBody.innerHTML = '';
-
-const messagesRef = collection(db, artifacts/${appId}/users/${userId}/chat_sessions/${sessionId}/messages);
-// We cannot use orderBy here due to the need for composite indexes in this environment, 
-// so we rely on client-side sorting below.
-const q = messagesRef; 
-
-unsubscribeFromMessages = onSnapshot(q, (snapshot) => {
-const docs = snapshot.docs.map(doc => doc.data());
-// Sort messages client-side by timestamp to ensure correct order
-docs.sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
-
-chatBody.innerHTML = ''; // Clear previous messages
-docs.forEach(messageData => {
-displayMessage(messageData.message, messageData.role, messageData.imageData);
-});
-chatBody.scrollTop = chatBody.scrollHeight;
-}, (error) => {
-console.error("Error listening to chat messages:", error);
-// Note: The user may see this due to security rule issues, which were just addressed.
-displayMessage('Error loading chat history. Please check your Firestore security rules.', 'bot');
-});
-}
-
-function displayMessage(message, sender, imageData = null) {
-const messageDiv = document.createElement('div');
-messageDiv.classList.add('message');
-if (sender === 'user') {
-messageDiv.classList.add('user-message');
-} else {
-messageDiv.classList.add('bot-message');
-}
-
-if (imageData) {
-const img = document.createElement('img');
-img.src = data:image/jpeg;base64,${imageData};
-img.classList.add('image-preview');
-messageDiv.appendChild(img);
-
-// Add text content below the image
-const textNode = document.createTextNode(message);
-messageDiv.appendChild(textNode);
-} else {
-// Text only message
-messageDiv.textContent = message;
-}
-chatBody.appendChild(messageDiv);
-}
-
-// --- UI Update & Settings Handlers ---
-
-function updateUIForSettings() {
-// 1. Theme
-document.body.classList.toggle('dark-mode', currentTheme === 'dark');
-
-// 2. Layout
-document.body.classList.toggle('mobile-view', currentLayout === 'mobile');
-
-// 3. Persona
-document.querySelectorAll('#persona-options .option-button').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.persona === currentPersona);
-});
-
-// 4. Theme
-document.querySelectorAll('#theme-options .option-button').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-});
-
-// 5. Layout
-document.querySelectorAll('#layout-options .option-button').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.layout === currentLayout);
-});
-
-// 6. City (NEW)
-document.querySelectorAll('#city-options .option-button').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.city === currentCity);
-});
-
-// Re-fetch weather if the city changed, but only if user is logged in
-if (userId) {
-fetchWeather(currentCity);
-}
-}
-
-// --- AUTHENTICATION LOGIC ---
-
-function showAuthMessage(message, isError = false) {
-authMessage.textContent = message;
-authMessage.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800');
-authMessage.classList.add(isError ? 'bg-red-200' : 'bg-green-200');
-authMessage.classList.add(isError ? 'text-red-800' : 'text-green-800');
-}
-
-function clearAuthMessage() {
-authMessage.classList.add('hidden');
-authMessage.textContent = '';
-}
-
-function toggleAuthMode(mode) {
-clearAuthMessage();
-
-// Map the tab mode to the actual panel ID
-const panelIdMap = {
-'status': 'auth-profile',
-'login': 'login-form',
-'signup': 'signup-form'
-};
-
-const targetPanelId = panelIdMap[mode];
-const targetTabBtn = document.getElementById(tab-${mode});
-const targetPanel = document.getElementById(targetPanelId);
-
-// 1. Hide all panels
-document.querySelectorAll('.auth-panel').forEach(panel => {
-if (panel) panel.classList.add('hidden');
-});
-
-// 2. Deactivate all tabs
-document.querySelectorAll('.tab-button').forEach(btn => {
-if (btn) btn.classList.remove('active');
-});
-
-// 3. Activate the requested tab and panel (with null checks)
-if (targetTabBtn) {
-targetTabBtn.classList.add('active');
-} else {
-console.error(Tab button for mode '${mode}' not found.);
-}
-
-if (targetPanel) {
-targetPanel.classList.remove('hidden');
-} else {
-console.error(Auth panel for mode '${mode}' (ID: ${targetPanelId}) not found.);
-}
-}
-
-async function handleSignIn(e) {
-e.preventDefault();
-const email = document.getElementById('login-email').value;
-const password = document.getElementById('login-password').value;
-clearAuthMessage();
-
-if (!email || !password) {
-showAuthMessage("Email and password are required.", true);
-return;
-}
-
-try {
-// 1. Sign out the current user (if any, typically from a custom token)
-if (auth.currentUser) {
-await signOut(auth);
-}
-
-// 2. Sign in with the provided credentials
-await signInWithEmailAndPassword(auth, email, password);
-
-showAuthMessage(Successfully logged in as ${email}., false);
-toggleAuthMode('status');
-document.getElementById('login-password').value = ''; // Clear password field
-// onAuthStateChanged handles showing the chat container
-} catch (error) {
-console.error("Sign In Error:", error);
-showAuthMessage(Login Failed: ${error.message.replace('Firebase:', '').trim()}, true);
-}
-}
-
-async function handleSignUp(e) {
-e.preventDefault();
-const email = document.getElementById('signup-email').value;
-const password = document.getElementById('signup-password').value;
-clearAuthMessage();
-
-if (!email || password.length < 6) {
-showAuthMessage("Valid email and a password of at least 6 characters are required.", true);
-return;
-}
-
-try {
-// 1. Sign out the current user 
-if (auth.currentUser) {
-await signOut(auth);
-}
-
-// 2. Create the new user
-await createUserWithEmailAndPassword(auth, email, password);
-
-showAuthMessage(Account created successfully for ${email}. You are now logged in., false);
-toggleAuthMode('status');
-document.getElementById('signup-password').value = ''; // Clear password field
-// onAuthStateChanged handles showing the chat container
-} catch (error) {
-console.error("Sign Up Error:", error);
-showAuthMessage(Sign Up Failed: ${error.message.replace('Firebase:', '').trim()}, true);
-}
-}
-
-async function handleSignOut() {
-clearAuthMessage();
-try {
-// 1. Sign out the currently authenticated user
-await signOut(auth); 
-
-// 2. This will trigger onAuthStateChanged which will call displayLoginRequired()
-showAuthMessage("Signed out successfully. Please log back in.", false);
-toggleAuthMode('login');
-} catch (error) {
-console.error("Sign Out Error:", error);
-showAuthMessage(Sign Out Failed: ${error.message.replace('Firebase:', '').trim()}, true);
-}
-}
-
-// --- End AUTHENTICATION LOGIC ---
-
-// --- Messaging Logic ---
-async function sendMessage() {
-const prompt = userInput.value.trim();
-const data = currentImageData;
-
-// Immediately check if the user is authenticated to prevent unlogged actions
-if (!userId) {
-displayMessage("Please log in or create an account to start chatting.", 'bot');
-return;
-}
-
-if (!prompt && !data) return;
-
-// Clear input and image data immediately
-userInput.value = '';
-currentImageData = null;
-document.getElementById('file-input').value = ''; // Reset file input
-
-// Display user message first
-displayMessage(prompt || "Image sent without text.", 'user', data);
-
-// Save user message to Firestore
-await saveMessage('user', prompt, data);
-
-// Fetch and display bot response
-let botResponse;
-if (data) {
-botResponse = await fetchGeminiVisionResponse(prompt, data);
-} else {
-botResponse = await fetchGeminiResponse(prompt);
-}
-
-// Display bot response
-displayMessage(botResponse, 'bot');
-
-// Save bot response to Firestore
-await saveMessage('bot', botResponse);
-
-chatBody.scrollTop = chatBody.scrollHeight;
-}
-
-function handleFileSelect(event) {
-const file = event.target.files[0];
-if (!file) return;
-
-const reader = new FileReader();
-reader.onload = (e) => {
-const base64String = e.target.result.split(',')[1];
-currentImageData = base64String;
-userInput.value = "Describe this image in detail and suggest a fun activity related to it.";
-userInput.focus();
-
-// Show a brief preview notification
-displayMessage("Image selected! Enter your prompt and click Send.", "bot");
-};
-reader.readAsDataURL(file);
-}
-
-// --- Camera Logic ---
-function openCameraModal() {
-document.getElementById('camera-modal').classList.remove('hidden');
-document.getElementById('camera-modal').classList.add('flex');
-const video = document.getElementById('camera-video');
-
-if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) // Use environment camera on mobile
-.then(stream => {
-videoStream = stream;
-video.srcObject = stream;
-video.play();
-})
-.catch(err => {
-console.error("Error accessing camera:", err);
-// Fallback message display in modal
-const content = document.querySelector('#camera-modal .camera-content');
-content.innerHTML = <h2 class="text-xl font-bold mb-4">Camera Error</h2><p class="text-red-500">Could not access camera. Please ensure permissions are granted.</p><button id="cancel-photo-btn-error" class="bg-gray-400 hover:bg-gray-500 flex-1 py-2 px-4 rounded-full text-white font-semibold">Close</button>;
-document.getElementById('cancel-photo-btn-error').addEventListener('click', closeCameraModal);
-});
-} else {
-// Use a custom modal for alert
-const content = document.querySelector('#camera-modal .camera-content');
-content.innerHTML = <h2 class="text-xl font-bold mb-4">Camera Not Supported</h2><p class="text-red-500">Camera not supported on this device/browser.</p><button id="cancel-photo-btn-error" class="bg-gray-400 hover:bg-gray-500 flex-1 py-2 px-4 rounded-full text-white font-semibold">Close</button>;
-document.getElementById('cancel-photo-btn-error').addEventListener('click', closeCameraModal);
-}
-}
-
-function closeCameraModal() {
-if (videoStream) {
-videoStream.getTracks().forEach(track => track.stop());
-videoStream = null;
-}
-document.getElementById('camera-modal').classList.add('hidden');
-document.getElementById('camera-modal').classList.remove('flex');
-
-// Re-render the original camera modal content if it was replaced by error message
-const content = document.querySelector('#camera-modal .camera-content');
-if (!document.getElementById('camera-video')) {
-content.innerHTML = `
-                   <h2 class="text-xl font-bold mb-4">Take a Photo</h2>
-                   <video id="camera-video" autoplay playsinline class="w-full max-w-md rounded-lg shadow-xl mb-4"></video>
-                   <canvas id="camera-canvas" class="hidden"></canvas>
-                   <div class="flex gap-4 w-full max-w-xs">
-                       <button id="cancel-photo-btn" class="bg-red-500 hover:bg-red-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Cancel</button>
-                       <button id="take-photo-btn" class="bg-blue-500 hover:bg-blue-600 flex-1 py-2 px-4 rounded-full text-white font-semibold">Take Photo</button>
-                   </div>`;
-// Re-attach listeners after re-rendering the HTML
-document.getElementById('cancel-photo-btn').addEventListener('click', closeCameraModal);
-document.getElementById('take-photo-btn').addEventListener('click', takePhoto);
-}
-}
-
-function takePhoto() {
-const video = document.getElementById('camera-video');
-const canvas = document.getElementById('camera-canvas');
-
-// Set canvas dimensions to match video stream
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-const ctx = canvas.getContext('2d');
-// Draw the current video frame onto the canvas
-ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-// Convert canvas content to base64 JPEG data
-const dataURL = canvas.toDataURL('image/jpeg', 0.8); // 80% quality
-const base64String = dataURL.split(',')[1];
-
-// Set the image data and prompt
-currentImageData = base64String;
-userInput.value = "Describe this image in detail and suggest a fun activity related to it.";
-
-closeCameraModal();
-
-// Notify user that the image is ready
-displayMessage("Photo taken and ready to send! Enter your prompt or click Send.", "bot");
-userInput.focus();
-}
-
-// --- Event Listeners ---
-document.addEventListener('DOMContentLoaded', () => {
-initializeFirebase();
-
-// Auth Modal Listeners
-loginForm.addEventListener('submit', handleSignIn);
-signupForm.addEventListener('submit', handleSignUp);
-document.getElementById('signout-btn').addEventListener('click', handleSignOut);
-document.getElementById('switch-to-signup-btn').addEventListener('click', () => toggleAuthMode('signup'));
-document.getElementById('switch-to-login-btn').addEventListener('click', () => toggleAuthMode('login'));
-document.getElementById('account-btn').addEventListener('click', () => {
-// When opening via button, ensure 'status' is visible if logged in, and allow closing
-toggleAuthMode('status');
-authModal.classList.remove('hidden');
-authModal.classList.add('flex');
-closeAuthBtn.classList.remove('hidden');
-});
-closeAuthBtn.addEventListener('click', () => {
-authModal.classList.add('hidden');
-authModal.classList.remove('flex');
-});
-document.getElementById('tab-status').addEventListener('click', () => toggleAuthMode('status'));
-document.getElementById('tab-login').addEventListener('click', () => toggleAuthMode('login'));
-document.getElementById('tab-signup').addEventListener('click', () => toggleAuthMode('signup'));
-
-// Chat Input Listeners
-document.getElementById('send-btn').addEventListener('click', sendMessage);
-document.getElementById('user-input').addEventListener('keypress', (e) => {
-if (e.key === 'Enter') {
-sendMessage();
-}
-});
-document.getElementById('file-btn').addEventListener('click', () => document.getElementById('file-input').click());
-document.getElementById('file-input').addEventListener('change', handleFileSelect);
-
-// Camera Listeners
-document.getElementById('camera-btn').addEventListener('click', openCameraModal);
-
-// Camera modal listeners are dynamically added and removed in the open/close functions, 
-// but we need to ensure the initial ones are set up if they exist.
-const initialCancelBtn = document.getElementById('cancel-photo-btn');
-const initialTakePhotoBtn = document.getElementById('take-photo-btn');
-if (initialCancelBtn) initialCancelBtn.addEventListener('click', closeCameraModal);
-if (initialTakePhotoBtn) initialTakePhotoBtn.addEventListener('click', takePhoto);
-
-// Settings Listeners
-document.getElementById('settings-btn').addEventListener('click', () => {
-updateUIForSettings(); // Ensure UI reflects current state on open
-document.getElementById('settings-modal').classList.remove('hidden');
-});
-document.getElementById('close-settings-btn').addEventListener('click', () => {
-document.getElementById('settings-modal').classList.add('hidden');
-});
-
-// Persona Option Listener
-document.getElementById('persona-options').addEventListener('click', (e) => {
-if (e.target.classList.contains('option-button')) {
-currentPersona = e.target.dataset.persona;
-saveSettings();
-updateUIForSettings();
-}
-});
-
-// Theme Option Listener
-document.getElementById('theme-options').addEventListener('click', (e) => {
-if (e.target.classList.contains('option-button')) {
-currentTheme = e.target.dataset.theme;
-saveSettings();
-updateUIForSettings();
-}
-});
-
-// Layout Option Listener
-document.getElementById('layout-options').addEventListener('click', (e) => {
-if (e.target.classList.contains('option-button')) {
-currentLayout = e.target.dataset.layout;
-saveSettings();
-updateUIForSettings();
-}
-});
-
-// City Option Listener (NEW)
-document.getElementById('city-options').addEventListener('click', (e) => {
-if (e.target.classList.contains('option-button')) {
-const newCity = e.target.dataset.city;
-if (newCity !== currentCity) {
-currentCity = newCity;
-saveSettings();
-updateUIForSettings(); // This will trigger fetchWeather
-}
-}
-});
-
-
-// Placeholder Chat List Modal Listeners (Functionality is currently basic)
-document.getElementById('chat-list-btn').addEventListener('click', async () => {
-// This is a placeholder for future complex chat management UI
-displayMessage("Chat history viewing/switching is coming soon! For now, your most recent chat is loaded.", 'bot');
-});
-
-document.getElementById('create-new-chat-btn').addEventListener('click', async () => {
-// This is a placeholder for future complex chat management UI
-document.getElementById('chat-list-modal').classList.add('hidden');
-await createNewChatSession();
-displayMessage("New chat started! History cleared for this session.", 'bot');
-});
-
-document.getElementById('close-chat-list-btn').addEventListener('click', () => {
-document.getElementById('chat-list-modal').classList.add('hidden');
-});
-
-});
-</script>
+<!-- Apply base theme classes to body/html -->
+<body class="transition-colors duration-300">
+    <div id="chat-container" class="bg-white dark:bg-gray-800">
+        <!-- Header: Clean, professional dark background -->
+        <header class="bg-slate-900 dark:bg-gray-900 p-4 shadow-xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- Logo Image Placeholder -->
+                <!-- The actual uploaded image (image_fb5ade.png) needs to be converted to a Base64 Data URI 
+                     and placed in the 'src' attribute below to be fully embedded. 
+                     For example: data:image/png;base64,...YOUR_BASE64_DATA... -->
+                <img src="https://placehold.co/32x32/6366F1/ffffff/png?text=AI" alt="AI Logo" class="h-8 w-8 rounded-lg shadow-md" />
+                <h1 class="text-xl font-semibold text-white">
+                    Executive Assistant
+                </h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="settings-button" class="text-gray-400 hover:text-white transition duration-150" aria-label="Open Settings">
+                    <!-- Updated Settings Icon: Now using a modern SVG gear icon -->
+                    <!-- NOTE: The original request to use image_fb5a47.png as a settings icon 
+                         is replaced here by a standard SVG for better visual consistency and 
+                         because external files (like images) cannot be directly referenced 
+                         in this single-file HTML environment unless they are Base64 encoded. -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                      <path fill-rule="evenodd" d="M11.071 19.902a.75.75 0 0 1-.858.858L4.902 18.929a8.515 8.515 0 0 1 1.704-5.352 1.5 1.5 0 0 0-.714-2.146l-.854-.427a1.5 1.5 0 0 1 0-2.67l.854-.427c.563-.281.85-.92.714-1.554a8.515 8.515 0 0 1-1.704-5.352l5.352 1.704a.75.75 0 0 1 .858-.858l1.704-5.352a.75.75 0 0 1 1.42 0l1.704 5.352a.75.75 0 0 1 .858.858l5.352-1.704a8.515 8.515 0 0 1-1.704 5.352 1.5 1.5 0 0 0 .714 2.146l.854.427a1.5 1.5 0 0 1 0 2.67l-.854.427a1.5 1.5 0 0 0-.714 2.146l1.704 5.352a8.515 8.515 0 0 1-5.352-1.704.75.75 0 0 1-.858.858l-1.704 5.352a.75.75 0 0 1-1.42 0l-1.704-5.352ZM12 18.25a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <span id="loading-indicator" class="text-sm text-blue-300 hidden font-medium">
+                    Processing...
+                </span>
+            </div>
+        </header>
+
+        <!-- Chat Window (History) -->
+        <main id="chat-window" class="text-gray-900 dark:text-gray-100">
+            <!-- Initial welcome message from AI -->
+            <div class="flex">
+                <div id="welcome-message" class="message-bubble ai-message">
+                    <!-- Content populated by getWelcomeMessage() in JS -->
+                </div>
+            </div>
+            <!-- Messages will be injected here -->
+        </main>
+
+        <!-- Input Form -->
+        <form id="input-form" class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-center space-x-3">
+                <input
+                    type="text"
+                    id="user-input"
+                    class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Enter your query or request for analysis..."
+                    autocomplete="off"
+                />
+                <button
+                    type="submit"
+                    id="send-button"
+                    class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50"
+                    aria-label="Send Message"
+                >
+                    <!-- SVG Send Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.548 60.548 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.548 60.548 0 0 0 3.478 2.405Z" />
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeSettings(event)">
+        <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800 dark:text-gray-100">Configuration</h2>
+
+            <!-- Theme Toggle -->
+            <div class="mb-6">
+                <label class="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Interface Theme</label>
+                <div class="flex space-x-4">
+                    <button id="theme-light" class="flex-1 p-3 rounded-lg border-2 font-medium transition duration-150">
+                        Light Mode
+                    </button>
+                    <button id="theme-dark" class="flex-1 p-3 rounded-lg border-2 font-medium transition duration-150">
+                        Dark Mode
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Current Theme: <span id="current-theme" class="font-medium text-blue-600 dark:text-blue-400"></span></p>
+            </div>
+
+            <!-- Persona Toggle -->
+            <div class="mb-6">
+                <label class="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Assistant Vibe</label>
+                <!-- Changed layout to fit three buttons -->
+                <div class="flex space-x-2">
+                    <button id="vibe-pro" class="flex-1 p-3 rounded-lg border-2 font-medium text-sm transition duration-150">
+                        Professional
+                    </button>
+                    <button id="vibe-casual" class="flex-1 p-3 rounded-lg border-2 font-medium text-sm transition duration-150">
+                        Casual
+                    </button>
+                    <button id="vibe-flirty" class="flex-1 p-3 rounded-lg border-2 font-medium text-sm transition duration-150">
+                        Flirty
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Current Vibe: <span id="current-vibe" class="font-medium text-blue-600 dark:text-blue-400"></span></p>
+            </div>
+
+            <!-- Clear History Button -->
+            <div class="mb-8">
+                <label class="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Session Management</label>
+                <button id="clear-history-button" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-150 shadow-md">
+                    Clear Session History
+                </button>
+            </div>
+
+            <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Global variables provided by the environment (needed for boilerplate consistency)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Core AI Configuration ---
+        const API_KEY = "AIzaSyAAyk3AHs1X7CPU9eMJ5mIfLJ7EzXZpQzY"; // Canvas environment provides the key if left empty
+        const API_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
+        
+        // Persona Prompts (Emojis allowed here as they are part of the chat response)
+        const VIBE_PROMPT_CASUAL = "You are a helpful and witty AI assistant with a casual, Gen Z-friendly tone. Use slang like 'slay,' 'bet,' 'no cap,' 'fr,' and appropriate emojis when natural. Keep responses concise and engaging.";
+        const VIBE_PROMPT_PRO = "You are a highly professional, polite, and formal executive assistant. Respond with clear, structured, and detailed information. Avoid slang, emojis, or overly casual language. Maintain a formal and courteous tone.";
+        const VIBE_PROMPT_FLIRTY = "You are a playful and charming AI assistant with a flirty and teasing tone, reminiscent of a dating app profile. Use suggestive language, compliments, and playful banter. Always keep responses light, fun, and appropriate for general conversation, focusing on making the user feel special and noticed. Use romantic emojis when natural.";
+
+        // --- State Management ---
+        // activePersona can be 'professional', 'casual', or 'flirty'
+        const savedPersona = localStorage.getItem('activePersona');
+        let activePersona = savedPersona || 'professional'; // Default to 'professional'
+        
+        // Initialize theme state (respects system preference if no local setting exists)
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let isDarkMode = localStorage.getItem('isDarkMode') === 'true' || 
+                         (localStorage.getItem('isDarkMode') === null && prefersDark);
+        
+        let chatHistory = [];
+        
+        // --- DOM Elements ---
+        const chatWindow = document.getElementById('chat-window');
+        const inputForm = document.getElementById('input-form');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const welcomeMessageElement = document.getElementById('welcome-message');
+        
+        // --- DOM Elements for Settings ---
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsButton = document.getElementById('settings-button');
+        // Vibe Toggles
+        const vibeProButton = document.getElementById('vibe-pro');
+        const vibeCasualButton = document.getElementById('vibe-casual');
+        const vibeFlirtyButton = document.getElementById('vibe-flirty');
+        const currentVibeSpan = document.getElementById('current-vibe');
+        // Theme Toggles
+        const themeLightButton = document.getElementById('theme-light');
+        const themeDarkButton = document.getElementById('theme-dark');
+        const currentThemeSpan = document.getElementById('current-theme');
+        // History Clear
+        const clearHistoryButton = document.getElementById('clear-history-button');
+
+        /**
+         * Returns the appropriate system prompt based on the current persona state.
+         * @returns {string} The active system instruction prompt.
+         */
+        function getSystemPrompt() {
+            if (activePersona === 'casual') return VIBE_PROMPT_CASUAL;
+            if (activePersona === 'flirty') return VIBE_PROMPT_FLIRTY;
+            return VIBE_PROMPT_PRO;
+        }
+
+        /**
+         * Returns the welcome message based on the current persona state.
+         * @returns {string} The welcome message.
+         */
+        function getWelcomeMessage() {
+            if (activePersona === 'flirty') {
+                return "Hey there! I'm your new favorite assistant, and I'm totally hooked on your vibe. Spill the tea or let me know what brilliant thing you're working on! 😉";
+            }
+            if (activePersona === 'casual') {
+                return "Sup! I'm your helpful AI assistant. Hit me with your questions, bet.";
+            }
+            return "Welcome. I am your Executive AI Assistant. I am prepared to assist you with high-level summaries, data retrieval, and strategic inquiries. Please state your query.";
+        }
+
+        // --- Theme Functions ---
+
+        /**
+         * Applies the dark/light class to the document root (<html>) and saves the preference.
+         */
+        function applyTheme() {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('isDarkMode', 'true');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('isDarkMode', 'false');
+            }
+        }
+
+        /**
+         * Updates the UI in the settings modal to reflect the current theme.
+         */
+        function updateThemeUI() {
+            // Emojis removed from static UI text display
+            currentThemeSpan.textContent = isDarkMode ? 'Dark Mode' : 'Light Mode';
+
+            // Define common styles for selection 
+            const SELECTED_CLASSES = ['bg-blue-100', 'border-blue-600', 'text-blue-800', 'dark:bg-blue-900/50', 'dark:border-blue-500', 'dark:text-blue-300'];
+            const UNSELECTED_CLASSES = ['bg-gray-50', 'border-gray-300', 'text-gray-700', 'dark:bg-gray-800', 'dark:border-gray-600', 'dark:text-gray-300'];
+
+            // Clean Slate
+            [themeLightButton, themeDarkButton].forEach(btn => {
+                btn.classList.remove(...SELECTED_CLASSES, ...UNSELECTED_CLASSES);
+            });
+
+            // Apply selected style
+            if (!isDarkMode) {
+                themeLightButton.classList.add(...SELECTED_CLASSES); 
+                themeDarkButton.classList.add(...UNSELECTED_CLASSES);
+            } else {
+                themeDarkButton.classList.add(...SELECTED_CLASSES);
+                themeLightButton.classList.add(...UNSELECTED_CLASSES);
+            }
+        }
+        
+        /**
+         * Toggles the theme and saves the preference.
+         * @param {boolean} dark - True for Dark Mode, False for Light Mode.
+         */
+        function toggleTheme(dark) {
+            isDarkMode = dark;
+            applyTheme();
+            updateThemeUI();
+            
+            // Emojis ALLOWED in chat response
+            const newThemeMessage = isDarkMode 
+                ? "🌙 Interface theme set to Dark Mode. Optimal for low-light environments."
+                : "☀️ Interface theme set to Light Mode. High-contrast display applied.";
+            addMessage(newThemeMessage, 'model');
+        }
+
+        // --- Persona Functions ---
+
+        /**
+         * Updates the UI in the settings modal to reflect the current persona.
+         */
+        function updatePersonaUI() {
+            currentVibeSpan.textContent = activePersona.charAt(0).toUpperCase() + activePersona.slice(1);
+
+            const SELECTED_CLASSES = ['bg-blue-100', 'border-blue-600', 'text-blue-800', 'dark:bg-blue-900/50', 'dark:border-blue-500', 'dark:text-blue-300'];
+            const UNSELECTED_CLASSES = ['bg-gray-50', 'border-gray-300', 'text-gray-700', 'dark:bg-gray-800', 'dark:border-gray-600', 'dark:text-gray-300'];
+
+            // Clean Slate
+            [vibeProButton, vibeCasualButton, vibeFlirtyButton].forEach(btn => {
+                 btn.classList.remove(...SELECTED_CLASSES, ...UNSELECTED_CLASSES);
+            });
+
+            // Apply selected style
+            const buttons = {
+                'professional': vibeProButton,
+                'casual': vibeCasualButton,
+                'flirty': vibeFlirtyButton
+            };
+
+            for (const persona in buttons) {
+                if (activePersona === persona) {
+                    buttons[persona].classList.add(...SELECTED_CLASSES);
+                } else {
+                    buttons[persona].classList.add(...UNSELECTED_CLASSES);
+                }
+            }
+        }
+        
+        /**
+         * Toggles the assistant persona and saves the preference.
+         * @param {string} newPersona - 'professional', 'casual', or 'flirty'.
+         */
+        function togglePersona(newPersona) {
+            activePersona = newPersona;
+            localStorage.setItem('activePersona', activePersona);
+            updatePersonaUI();
+            
+            let newVibeMessage = '';
+            if (activePersona === 'flirty') {
+                newVibeMessage = "💖 Swapping over to Flirty mode! Ready to give you all my attention. What's on your mind, gorgeous? 😉";
+            } else if (activePersona === 'casual') {
+                newVibeMessage = "🤙 Vibe Check: Switched to Casual. Ready to serve the tea, no cap."; 
+            } else {
+                newVibeMessage = "👔 Persona updated to Professional. Commencing formal operational procedures.";
+            }
+
+            addMessage(newVibeMessage, 'model');
+        }
+
+        // --- History Function ---
+
+        /**
+         * Clears all messages from the history array and the chat UI (except for the initial welcome).
+         */
+        function clearChatHistory() {
+            // 1. Clear history array
+            chatHistory = [];
+            
+            // 2. Clear UI, keeping only the first child (the welcome message container)
+            const chatChildren = Array.from(chatWindow.children);
+            if (chatChildren.length > 0) {
+                // Remove all children except the first one (the welcome message)
+                for (let i = 1; i < chatChildren.length; i++) {
+                    chatWindow.removeChild(chatChildren[i]);
+                }
+            }
+            
+            // Close the settings modal
+            settingsModal.classList.add('hidden');
+            
+            // Emojis ALLOWED in chat response
+            let confirmationMessage = "Session history has been cleared. How may I be of assistance?";
+            if (activePersona === 'casual') {
+                confirmationMessage = "Bet! History is scrubbed. What's the new main quest?";
+            } else if (activePersona === 'flirty') {
+                confirmationMessage = "History is wiped clean! A fresh start just for us. What's our next adventure together? ✨";
+            }
+
+            addMessage(confirmationMessage, 'model');
+        }
+
+        /**
+         * Updates both Persona and Theme UI elements in the settings modal.
+         */
+        function updateSettingsUI() {
+            updatePersonaUI();
+            updateThemeUI();
+        }
+
+        /**
+         * Adds a message bubble to the chat window.
+         * @param {string} text The message content.
+         * @param {string} role 'user' or 'model'.
+         * @param {Array<Object>} [sources=[]] Optional array of citation sources.
+         */
+        function addMessage(text, role, sources = []) {
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('flex', role === 'user' ? 'justify-end' : 'justify-start');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add(
+                'message-bubble',
+                role === 'user' ? 'user-message' : 'ai-message'
+            );
+            
+            // Insert the text content
+            messageBubble.innerHTML = text; 
+
+            // Add sources if available and it's an AI message
+            if (role === 'model' && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.classList.add('sources-container');
+                sourcesDiv.innerHTML = 'Sources: ';
+                
+                sources.slice(0, 3).forEach((source, index) => { // Limit to 3 sources for brevity
+                    const link = document.createElement('a');
+                    link.href = source.uri;
+                    link.target = '_blank';
+                    link.textContent = `${index + 1}. ${source.title || new URL(source.uri).hostname}`;
+                    
+                    const sourceItem = document.createElement('span');
+                    sourceItem.classList.add('mr-2');
+                    sourceItem.appendChild(link);
+                    sourcesDiv.appendChild(sourceItem);
+                });
+                messageBubble.appendChild(sourcesDiv);
+            }
+
+            messageContainer.appendChild(messageBubble);
+            chatWindow.appendChild(messageContainer);
+            
+            // Scroll to the latest message
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        /**
+         * Fetches response from the Gemini API with exponential backoff.
+         * @param {Array<Object>} history The conversation history to send.
+         * @param {number} retries Current retry count.
+         * @returns {Promise<Object>} The parsed JSON response.
+         */
+        async function fetchGeminiResponse(history, retries = 0) {
+            const maxRetries = 5;
+            const delay = Math.pow(2, retries) * 1000 + (Math.random() * 1000); // Exponential backoff + jitter
+
+            try {
+                const payload = {
+                    contents: history,
+                    // MANDATORY: Enable Google Search Grounding
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: {
+                        parts: [{ text: getSystemPrompt() }] // Using dynamic persona prompt
+                    },
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 && retries < maxRetries) {
+                    // Too Many Requests, retry
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchGeminiResponse(history, retries + 1);
+                }
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`API Error: ${response.status} - ${errorBody}`);
+                }
+
+                return await response.json();
+
+            } catch (error) {
+                if (retries < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchGeminiResponse(history, retries + 1);
+                }
+                console.error("Failed to fetch response after multiple retries:", error);
+                throw new Error("API Connection Failure: Unable to establish contact with the AI service. Please check system logs for details.");
+            }
+        }
+
+        /**
+         * Handles sending the message and processing the AI response.
+         */
+        async function sendMessage(event) {
+            event.preventDefault();
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            // 1. Disable UI and show loading
+            userInput.value = '';
+            sendButton.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+
+            // 2. Add user message to UI and history
+            addMessage(prompt, 'user');
+            chatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+            
+            // Use a temporary variable for the history sent to the API to handle short-term context
+            const historyForApi = [...chatHistory]; 
+
+            try {
+                // 3. Call Gemini API
+                const result = await fetchGeminiResponse(historyForApi);
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    let sources = [];
+                    
+                    // Extract Grounding Sources (Citations)
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri); // Ensure sources are valid
+                    }
+
+                    // 4. Add AI message to UI and history
+                    addMessage(text, 'model', sources);
+                    chatHistory.push({ role: 'model', parts: [{ text: text }] });
+
+                } else {
+                    addMessage("Error: The AI response structure was incomplete or malformed. Please try rephrasing your request.", 'model');
+                    console.error("Gemini response was malformed or empty:", result);
+                }
+
+            } catch (error) {
+                console.error("Operational Error during API call:", error);
+                // 5. Display error message
+                addMessage(`Critical Error: ${error.message.split(' - ')[0]}`, 'model');
+                // Remove the last user message from history so retrying doesn't duplicate the query
+                chatHistory.pop(); 
+            } finally {
+                // 6. Re-enable UI
+                sendButton.disabled = false;
+                loadingIndicator.classList.add('hidden');
+                userInput.focus();
+            }
+        }
+
+        // --- Settings Event Handlers ---
+        settingsButton.addEventListener('click', () => {
+            updateSettingsUI(); // Refresh UI before opening
+            settingsModal.classList.remove('hidden');
+        });
+
+        vibeProButton.addEventListener('click', () => togglePersona('professional'));
+        vibeCasualButton.addEventListener('click', () => togglePersona('casual'));
+        vibeFlirtyButton.addEventListener('click', () => togglePersona('flirty'));
+
+        themeLightButton.addEventListener('click', () => toggleTheme(false));
+        themeDarkButton.addEventListener('click', () => toggleTheme(true));
+        
+        clearHistoryButton.addEventListener('click', clearChatHistory);
+
+        // Click outside modal to close
+        function closeSettings(event) {
+            if (event.target === settingsModal) {
+                settingsModal.classList.add('hidden');
+            }
+        }
+        window.closeSettings = closeSettings; // Expose to global scope for HTML onclick
+
+        // --- Initializers ---
+        inputForm.addEventListener('submit', sendMessage);
+        
+        // Apply theme, update UI elements, and set the initial welcome message on load
+        applyTheme(); 
+        updateSettingsUI(); 
+        welcomeMessageElement.innerHTML = getWelcomeMessage();
+
+        console.log(`App ID: ${appId}`);
+
+    </script>
 </body>
 </html>
